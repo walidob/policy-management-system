@@ -1,4 +1,4 @@
-namespace PolicyManagementApp.Server
+namespace PolicyManagementApp.Api
 {
     public class WeatherForecast
     {

@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PolicyManagement.Application\PolicyManagement.Application.csproj" />
+    <ProjectReference Include="..\PolicyManagement.Domain\PolicyManagement.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

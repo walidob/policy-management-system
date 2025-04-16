@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace PolicyManagementApp.Server.Controllers
+namespace PolicyManagementApp.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
