@@ -24,14 +24,14 @@ export class AppComponent implements OnInit {
   }
 
   getForecasts() {
-    this.http.get<WeatherForecast[]>('/weatherforecast').subscribe(
-      (result) => {
+    this.http.get<WeatherForecast[]>('api/weatherforecast').subscribe({
+      next: (result) => {
         this.forecasts = result;
       },
-      (error) => {
+      error: (error) => {
         console.error(error);
       }
-    );
+    });
   }
 
   title = 'policymanagementapp.client';

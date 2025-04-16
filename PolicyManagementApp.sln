@@ -12,15 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "frontend", "frontend", "{A0
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{EB874D51-56AE-4520-8D6A-083CB19DBA26}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CF9408DC-D579-42D3-94D0-EB710C02F8B8}"
-	ProjectSection(SolutionItems) = preProject
-		.gitignore = .gitignore
-		README.md = README.md
-	EndProjectSection
-EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "policymanagementapp.client", "frontend\policymanagementapp.client\policymanagementapp.client.esproj", "{C70F5733-DE19-43D4-72B3-261AD18C79E9}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyManagementApp.Api", "src\PolicyManagementApp.Server\PolicyManagementApp.Api.csproj", "{1EA0080E-A566-9672-6F9C-D32D6FE6CB0C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyManagement.Application", "src\PolicyManagement.Application\PolicyManagement.Application.csproj", "{13DA56FA-18C2-45E6-F594-82AA8C42C1DF}"
 EndProject
@@ -36,6 +28,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyManagement.Domain.Uni
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyManagement.Infrastructure.IntegrationTests", "tests\PolicyManagement.Infrastructure.IntegrationTests\PolicyManagement.Infrastructure.IntegrationTests.csproj", "{07267070-CE25-B05C-4968-4E65B84018F0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyManagementApp.Api", "src\PolicyManagementApp.Api\PolicyManagementApp.Api.csproj", "{D8C39ABF-54DD-9993-0A97-38380BE682ED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,10 +42,6 @@ Global
 		{C70F5733-DE19-43D4-72B3-261AD18C79E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C70F5733-DE19-43D4-72B3-261AD18C79E9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C70F5733-DE19-43D4-72B3-261AD18C79E9}.Release|Any CPU.Deploy.0 = Release|Any CPU
-		{1EA0080E-A566-9672-6F9C-D32D6FE6CB0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1EA0080E-A566-9672-6F9C-D32D6FE6CB0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1EA0080E-A566-9672-6F9C-D32D6FE6CB0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1EA0080E-A566-9672-6F9C-D32D6FE6CB0C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{13DA56FA-18C2-45E6-F594-82AA8C42C1DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{13DA56FA-18C2-45E6-F594-82AA8C42C1DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13DA56FA-18C2-45E6-F594-82AA8C42C1DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -80,13 +70,16 @@ Global
 		{07267070-CE25-B05C-4968-4E65B84018F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07267070-CE25-B05C-4968-4E65B84018F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07267070-CE25-B05C-4968-4E65B84018F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8C39ABF-54DD-9993-0A97-38380BE682ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8C39ABF-54DD-9993-0A97-38380BE682ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8C39ABF-54DD-9993-0A97-38380BE682ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8C39ABF-54DD-9993-0A97-38380BE682ED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C70F5733-DE19-43D4-72B3-261AD18C79E9} = {A010F94B-4244-4AC1-BFAD-D4D7B7564E68}
-		{1EA0080E-A566-9672-6F9C-D32D6FE6CB0C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{13DA56FA-18C2-45E6-F594-82AA8C42C1DF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{286A2CD7-4C3D-769D-8AC0-ECAC7D9BDFE3} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{DD9D4005-18F8-6830-BE45-1ECDC320D2A3} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
@@ -94,6 +87,7 @@ Global
 		{4634700A-C827-F005-47EE-478DD4B9DA7A} = {EB874D51-56AE-4520-8D6A-083CB19DBA26}
 		{4CED54BF-17A4-0EA5-3218-C0C142DD3838} = {EB874D51-56AE-4520-8D6A-083CB19DBA26}
 		{07267070-CE25-B05C-4968-4E65B84018F0} = {EB874D51-56AE-4520-8D6A-083CB19DBA26}
+		{D8C39ABF-54DD-9993-0A97-38380BE682ED} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EC90F790-8478-401C-990F-637220BCBD5B}
