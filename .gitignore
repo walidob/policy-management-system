@@ -133,3 +133,4 @@ yarn-error.log*
 *.dll
 *.exe
 *.pdb
+/NOTES.md
