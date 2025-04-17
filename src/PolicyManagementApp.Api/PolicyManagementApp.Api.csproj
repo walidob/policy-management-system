@@ -14,6 +14,14 @@
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy">
       <Version>9.*-*</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Scalar.AspNetCore" Version="2.1.16" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Serilog.Exceptions" Version="8.4.0" />
@@ -33,7 +41,7 @@
 
   <ItemGroup>
     <Folder Include="logs\" />
-    <Folder Include="wwwroot\" />
+    <Folder Include="wwwroot\browser\" />
   </ItemGroup>
 
 </Project>
