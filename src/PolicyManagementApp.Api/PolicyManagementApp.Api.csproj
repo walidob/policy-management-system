@@ -14,10 +14,10 @@
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy">
       <Version>9.*-*</Version>
     </PackageReference>
-    <PackageReference Include="Scalar.AspNetCore" Version="2.1.13" />
-    <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.1.16" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +26,12 @@
     </ProjectReference>
     <ProjectReference Include="..\PolicyManagement.Application\PolicyManagement.Application.csproj" />
     <ProjectReference Include="..\PolicyManagement.Infrastructure\PolicyManagement.Infrastructure.csproj" />
+    <ProjectReference Include="..\PolicyManagement.Persistence\PolicyManagement.Persistence.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="logs\" />
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>

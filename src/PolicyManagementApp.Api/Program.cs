@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
+using PolicyManagement.Persistence.Extensions;
+using PolicyManagementApp.Api.Middleware;
+using PolicyManagementApp.Api.Models.ApiModels;
 using Scalar.AspNetCore;
 using Serilog;
-using Microsoft.AspNetCore.Diagnostics;
-using PolicyManagementApp.Api.Filters;
-using PolicyManagementApp.Api.Models.ApiModels;
-using System;
 
 namespace PolicyManagementApp.Api
 {
@@ -11,32 +12,38 @@ namespace PolicyManagementApp.Api
     {
         public static void Main(string[] args)
         {
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
-                .Build();
-
-            // Configure Serilog logger
+            // Configure logger temporarily for startup issues, reading minimal config
             Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(configuration)
-                .CreateLogger();
+                .WriteTo.Console()
+                .CreateBootstrapLogger();
 
-            Log.Information("Starting Policy Management API");
+            Log.Information("API Starting Up.");
 
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Host.UseSerilog();
+            // --- Full Logging Setup --- 
+            // Replace bootstrap logger with full config from appsettings.json
+            builder.Host.UseSerilog((context, services, configuration) => configuration
+                .ReadFrom.Configuration(context.Configuration) // Reads sinks (Console, File) from appsettings
+                .ReadFrom.Services(services) // Allows DI injection into sinks
+                .Enrich.FromLogContext());
 
-            builder.Services.AddControllers(options =>
-            {
-                options.Filters.Add<GlobalExceptionFilter>();
-            });
+            Log.Debug("Registering services.");
+            //builder.Services.AddApplicationServices(); 
+            //builder.Services.AddInfrastructureServices(builder.Configuration);
+            builder.Services.AddPersistenceServices(builder.Configuration);
 
-            builder.Services.AddOpenApi();
+            // API Layer Services
+            builder.Services.AddControllers();
+            builder.Services.AddOpenApi(); // Swagger/OpenAPI
+
+            Log.Information("Services registered.");
 
             var app = builder.Build();
+            Log.Information("Application built.");
 
+
+            Log.Information("Configuring middleware pipeline.");
             app.UseDefaultFiles();
             app.MapStaticAssets();
 
@@ -45,62 +52,26 @@ namespace PolicyManagementApp.Api
                 app.UseDeveloperExceptionPage();
                 app.MapOpenApi();
                 app.MapScalarApiReference();
+                app.UseSerilogRequestLogging(); // Log HTTP Requests
             }
             else
             {
-                app.UseExceptionHandler(errorApp =>
-                {
-                    errorApp.Run(async context =>
-                    {
-                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                        context.Response.ContentType = "application/json";
-
-                        var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
-                        var exception = exceptionHandlerPathFeature?.Error;
-
-                        Log.Error(exception, "Unhandled exception occurred");
-
-                        var errorResponse = new ErrorResponseModel
-                        {
-                            Error = "An error occurred while processing your request.",
-                            StatusCode = context.Response.StatusCode
-                        };
-
-                        await context.Response.WriteAsJsonAsync(errorResponse);
-                    });
-                });
-
+                app.UseMiddleware<ExceptionHandlingMiddleware>();
                 app.UseHsts();
             }
 
-            app.UseStatusCodePages(async statusCodeContext =>
-            {
-                var context = statusCodeContext.HttpContext;
-                context.Response.ContentType = "application/json";
-                
-                var errorResponse = new ErrorResponseModel
-                {
-                    Error = $"Status code error: {context.Response.StatusCode}",
-                    StatusCode = context.Response.StatusCode
-                };
-                
-                await context.Response.WriteAsJsonAsync(errorResponse);
-                
-                Log.Error("Status code {StatusCode} returned for {Path}", 
-                    context.Response.StatusCode, 
-                    context.Request.Path);
-            });
-
-            app.UseSerilogRequestLogging();
+            // Use our custom status code pages middleware
+            app.UseStatusCodePages();
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
 
             app.MapControllers();
 
             app.MapFallbackToFile("/index.html");
+            Log.Information("Middleware pipeline configured.");
 
+            Log.Information("Running application.");
             app.Run();
         }
     }
