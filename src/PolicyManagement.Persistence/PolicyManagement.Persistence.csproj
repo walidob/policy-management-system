@@ -9,13 +9,10 @@
   <ItemGroup>
     <Compile Remove="Configurations\**" />
     <Compile Remove="Interceptors\**" />
-    <Compile Remove="Migrations\**" />
     <EmbeddedResource Remove="Configurations\**" />
     <EmbeddedResource Remove="Interceptors\**" />
-    <EmbeddedResource Remove="Migrations\**" />
     <None Remove="Configurations\**" />
     <None Remove="Interceptors\**" />
-    <None Remove="Migrations\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.4">
       <PrivateAssets>all</PrivateAssets>
@@ -31,10 +30,14 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.4" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.4" />
+    <PackageReference Include="Serilog" Version="3.2.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Initialization\" />
     <Folder Include="Repositories\" />
   </ItemGroup>
 
