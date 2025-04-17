@@ -3,46 +3,45 @@ using PolicyManagementApp.Api.Models.ApiModels;
 using Serilog;
 using System.Net;
 
-namespace PolicyManagementApp.Api.Middleware
+namespace PolicyManagementApp.Api.Middleware;
+
+public class ExceptionHandlingMiddleware
 {
-    public class ExceptionHandlingMiddleware
+    private readonly RequestDelegate _next;
+
+    public ExceptionHandlingMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
+        _next = next;
+    }
 
-        public ExceptionHandlingMiddleware(RequestDelegate next)
+    public async Task Invoke(HttpContext context)
+    {
+        try
         {
-            _next = next;
+            await _next(context);
         }
-
-        public async Task Invoke(HttpContext context)
+        catch (Exception ex)
         {
-            try
-            {
-                await _next(context);
-            }
-            catch (Exception ex)
-            {
-                await HandleExceptionAsync(context, ex);
-            }
-        }
-
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
-        {
-            // Log the exception details
-            Log.Error(exception, 
-                "Unhandled exception: {Path}", 
-                context.Request.Path.Value);
-
-            var errorResponse = new ErrorResponseModel
-            {
-                Error = "An internal server error occurred.",
-                StatusCode = StatusCodes.Status500InternalServerError
-            };
-
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = errorResponse.StatusCode;
-            
-            return context.Response.WriteAsJsonAsync(errorResponse);
+            await HandleExceptionAsync(context, ex);
         }
     }
-} 
+
+    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        // Log the exception details
+        Log.Error(exception, 
+            "Unhandled exception: {Path}", 
+            context.Request.Path.Value);
+
+        var errorResponse = new ErrorResponseModel
+        {
+            Error = "An internal server error occurred.",
+            StatusCode = StatusCodes.Status500InternalServerError
+        };
+
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = errorResponse.StatusCode;
+        
+        return context.Response.WriteAsJsonAsync(errorResponse);
+    }
+}

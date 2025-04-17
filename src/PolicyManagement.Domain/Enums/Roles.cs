@@ -1,9 +1,7 @@
-namespace PolicyManagement.Domain.Enums
+namespace PolicyManagement.Domain.Enums;
+public enum DefaultRoles
 {
-    public enum DefaultRoles
-    {
-        //Will add Description attribute in the future
-        Admin,
-        User
-    }
-} 
+    //Will add Description attribute in the future
+    Admin,
+    User
+}
