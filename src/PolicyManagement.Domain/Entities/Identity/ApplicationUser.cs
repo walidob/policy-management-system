@@ -5,7 +5,7 @@ using PolicyManagement.Domain.Entities.Catalog;
 
 namespace PolicyManagement.Domain.Entities.Identity;
 
-public class ApplicationUser : IdentityUser
+public class ApplicationUser : IdentityUser<int> //use int instead of string
 {
     [MaxLength(100)]
     public string? FirstName { get; set; }
@@ -14,7 +14,7 @@ public class ApplicationUser : IdentityUser
     public string? LastName { get; set; }
     
     [ForeignKey("Tenant")]
-    public Guid? TenantId { get; set; }
+    public int? TenantId { get; set; }
     
     public virtual Tenant? Tenant { get; set; }
 }

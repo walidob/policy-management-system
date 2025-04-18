@@ -1,4 +1,5 @@
 using PolicyManagement.Application.Extensions;
+using PolicyManagement.Infrastructure.Extensions;
 using PolicyManagement.Persistence.Contexts.CatalogDbContext.Initialization;
 using PolicyManagement.Persistence.Extensions;
 using PolicyManagementApp.Api.Middleware;
@@ -12,8 +13,10 @@ builder.Host.UseSerilogConfiguration();
 
 Log.Information("API Starting Up.");
 builder.Services.AddApplicationServices();
-//builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddPersistenceServices(builder.Configuration);
+
+builder.Services.AddResponseCaching();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi(); // Swagger/OpenAPI
@@ -43,10 +46,12 @@ else
     app.UseHsts();
 }
 
-// Use our custom status code pages middleware
 app.UseStatusCodePages();
 
 app.UseHttpsRedirection();
+
+app.UseResponseCaching();
+
 app.UseAuthorization();
 
 app.MapControllers();

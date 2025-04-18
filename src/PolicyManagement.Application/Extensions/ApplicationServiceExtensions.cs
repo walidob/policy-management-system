@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Reflection;
 using Serilog;
 using Serilog.Events;
 
@@ -9,7 +10,7 @@ public static class ApplicationServiceExtensions
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        // Register application services here
+        services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
         return services;
     }
