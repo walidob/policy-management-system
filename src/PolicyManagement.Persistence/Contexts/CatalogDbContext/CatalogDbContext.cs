@@ -5,7 +5,7 @@ using PolicyManagement.Domain.Entities.Identity;
 
 namespace PolicyManagement.Persistence.Contexts.CatalogDbContext;
 
-public class CatalogDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
+public class CatalogDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>
 {
     public CatalogDbContext(DbContextOptions<CatalogDbContext> options)
         : base(options)

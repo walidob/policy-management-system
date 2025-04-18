@@ -14,7 +14,6 @@ public class TenantDbContextService
     }
 
     // TODO: Future Enhancement - Implement dynamic tenant DbContext registration
-    // This method would create and register tenant contexts dynamically without requiring code changes
     public IServiceCollection RegisterTenantDbContexts(IServiceCollection services)
     {
         // Get all tenant database connection strings
@@ -22,12 +21,12 @@ public class TenantDbContextService
             .GetChildren()
             .ToDictionary(x => x.Key, x => x.Value);
 
-        RegisterKnownTenantDbContexts(services, tenantDatabases);
+        RegisterTenantDbContexts(services, tenantDatabases);
 
         return services;
     }
 
-    private static void RegisterKnownTenantDbContexts(IServiceCollection services, Dictionary<string, string> tenantDatabases)
+    private static void RegisterTenantDbContexts(IServiceCollection services, Dictionary<string, string> tenantDatabases)
     {
         if (tenantDatabases.TryGetValue("Tenant1Db", out var tenant1Connection) && !string.IsNullOrEmpty(tenant1Connection))
         {

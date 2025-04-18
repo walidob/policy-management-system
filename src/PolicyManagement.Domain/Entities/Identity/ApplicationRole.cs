@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace PolicyManagement.Domain.Entities.Identity;
 
-public class ApplicationRole : IdentityRole
+public class ApplicationRole : IdentityRole<int>
 {
     public ApplicationRole() : base()
     {
