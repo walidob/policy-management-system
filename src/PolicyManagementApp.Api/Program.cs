@@ -1,4 +1,5 @@
 using PolicyManagement.Application.Extensions;
+using PolicyManagement.Persistence.Contexts.CatalogDbContext.Initialization;
 using PolicyManagement.Persistence.Extensions;
 using PolicyManagementApp.Api.Middleware;
 using Scalar.AspNetCore;

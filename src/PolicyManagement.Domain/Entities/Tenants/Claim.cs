@@ -1,0 +1,29 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace PolicyManagement.Domain.Entities.Tenants;
+
+public class Claim
+{
+    [Key]
+    public int Id { get; set; }
+    
+    [Required]
+    [MaxLength(256)]
+    public string Title { get; set; }
+    
+    [MaxLength(2000)]
+    public string Description { get; set; }
+    
+    [Required]
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Amount { get; set; }
+    
+    [Required]
+    public int Status { get; set; }
+
+    [ForeignKey(nameof(Policy))]
+    public int PolicyId { get; set; }
+    
+    public virtual Policy Policy { get; set; }
+}

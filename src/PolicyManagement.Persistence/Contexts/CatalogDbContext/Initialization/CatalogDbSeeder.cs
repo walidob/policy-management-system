@@ -4,9 +4,8 @@ using Microsoft.Extensions.Logging;
 using PolicyManagement.Domain.Entities.Catalog;
 using PolicyManagement.Domain.Entities.Identity;
 using PolicyManagement.Domain.Enums;
-using PolicyManagement.Persistence.Contexts.CatalogDbContext;
 
-namespace PolicyManagement.Persistence.Initialization;
+namespace PolicyManagement.Persistence.Contexts.CatalogDbContext.Initialization;
 
 public static class CatalogDbSeeder
 {
@@ -37,7 +36,7 @@ public static class CatalogDbSeeder
             Identifier = "tenant-1",
             DatabaseIdentifier = "Tenant1Db",
             IsActive = true,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.UtcNow
         };
         dbContext.Tenants.Add(tenant1);
         logger.LogInformation("Seeded Tenant: {TenantName} ({TenantId})", tenant1.Name, tenant1.TenantId);
@@ -50,7 +49,7 @@ public static class CatalogDbSeeder
             Identifier = "tenant-2",
             DatabaseIdentifier = "Tenant2Db",
             IsActive = true,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.UtcNow
         };
         dbContext.Tenants.Add(tenant2);
         logger.LogInformation("Seeded Tenant: {TenantName} ({TenantId})", tenant2.Name, tenant2.TenantId);
@@ -73,7 +72,7 @@ public static class CatalogDbSeeder
         string email,
         string role,
         Guid tenantId,
-        string defaultPassword = "P@ssw0rd1!")
+        string defaultPassword = "1234")
     {
         // Check if user already exists
         var existingUser = await userManager.FindByEmailAsync(email);
