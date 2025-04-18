@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Diagnostics;
 using PolicyManagementApp.Api.Models.ApiModels;
 using Serilog;
-using System.Net;
 
 namespace PolicyManagementApp.Api.Middleware;
 

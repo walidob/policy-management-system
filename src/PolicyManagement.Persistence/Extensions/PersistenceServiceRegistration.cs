@@ -2,11 +2,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using PolicyManagement.Domain.Entities.Catalog;
 using PolicyManagement.Domain.Entities.Identity;
 using PolicyManagement.Domain.Enums;
 using PolicyManagement.Persistence.Contexts.CatalogDbContext;
-using PolicyManagement.Persistence.Initialization;
 
 namespace PolicyManagement.Persistence.Extensions;
 
@@ -19,6 +18,7 @@ public static class PersistenceServiceRegistration
             options.UseSqlServer(configuration.GetConnectionString("Catalog"))
             .UseSeeding((context, _) =>//This is the latest way for seeding data in .NET9 (more info:https://learn.microsoft.com/en-us/ef/core/modeling/data-seeding)
             {
+                // Seed roles
                 var roleExists = context.Set<ApplicationRole>().Any();
                 if (!roleExists)
                 {
@@ -32,9 +32,42 @@ public static class PersistenceServiceRegistration
                     context.Set<ApplicationRole>().AddRange(roles);
                     context.SaveChanges();
                 }
+
+                // Seed policy types
+                var policyTypesExist = context.Set<PolicyTypeLookup>().Any();
+                if (!policyTypesExist)
+                {
+                    var policyTypes = Enum.GetValues(typeof(PolicyType))
+                        .Cast<PolicyType>()
+                        .Select(pt => new PolicyTypeLookup 
+                        { 
+                            Id = (int)pt, 
+                            Name = pt.ToString(),
+                        })
+                        .ToArray();
+                    context.Set<PolicyTypeLookup>().AddRange(policyTypes);
+                    context.SaveChanges();
+                }
+
+                // Seed claim statuses
+                var claimStatusesExist = context.Set<ClaimStatuLookup>().Any();
+                if (!claimStatusesExist)
+                {
+                    var claimStatuses = Enum.GetValues(typeof(ClaimStatus))
+                        .Cast<ClaimStatus>()
+                        .Select(cs => new ClaimStatuLookup 
+                        { 
+                            Id = (int)cs, 
+                            Name = cs.ToString(),
+                        })
+                        .ToArray();
+                    context.Set<ClaimStatuLookup>().AddRange(claimStatuses);
+                    context.SaveChanges();
+                }
             })
             .UseAsyncSeeding(async (context, _, cancellationToken) =>
             {
+                // Seed roles async
                 var roleExists = await context.Set<ApplicationRole>().AnyAsync(cancellationToken: cancellationToken);
                 if (!roleExists)
                 {
@@ -46,6 +79,38 @@ public static class PersistenceServiceRegistration
                             })
                             .ToArray();
                     await context.Set<ApplicationRole>().AddRangeAsync(roles);
+                    await context.SaveChangesAsync(cancellationToken);
+                }
+
+                // Seed policy types async
+                var policyTypesExist = await context.Set<PolicyTypeLookup>().AnyAsync(cancellationToken: cancellationToken);
+                if (!policyTypesExist)
+                {
+                    var policyTypes = Enum.GetValues(typeof(PolicyType))
+                        .Cast<PolicyType>()
+                        .Select(pt => new PolicyTypeLookup 
+                        { 
+                            Id = (int)pt, 
+                            Name = pt.ToString(),
+                        })
+                        .ToArray();
+                    await context.Set<PolicyTypeLookup>().AddRangeAsync(policyTypes);
+                    await context.SaveChangesAsync(cancellationToken);
+                }
+
+                // Seed claim statuses async
+                var claimStatusesExist = await context.Set<ClaimStatuLookup>().AnyAsync(cancellationToken: cancellationToken);
+                if (!claimStatusesExist)
+                {
+                    var claimStatuses = Enum.GetValues(typeof(ClaimStatus))
+                        .Cast<ClaimStatus>()
+                        .Select(cs => new ClaimStatuLookup 
+                        { 
+                            Id = (int)cs, 
+                            Name = cs.ToString(),
+                        })
+                        .ToArray();
+                    await context.Set<ClaimStatuLookup>().AddRangeAsync(claimStatuses);
                     await context.SaveChangesAsync(cancellationToken);
                 }
             }));
@@ -67,40 +132,5 @@ public static class PersistenceServiceRegistration
             .AddDefaultTokenProviders();
 
         return services;
-    }
-
-    public static async Task SeedDataAsync(this IServiceProvider serviceProvider)
-    {
-        using var scope = serviceProvider.CreateScope();
-        var services = scope.ServiceProvider;
-
-        // Get logger for this context
-        var logger = services.GetRequiredService<ILogger<object>>();
-
-        try
-        {
-            var configuration = services.GetRequiredService<IConfiguration>();
-
-            // Check if demo seeding is enabled
-            bool seedDataEnabled = configuration.GetSection("FeatureFlags").GetValue<bool>("EnableSeedData", false);
-
-            if (!seedDataEnabled)
-            {
-                logger.LogInformation("Demo data seeding is disabled. Set Demo:SeedData to true in appsettings.json to enable it.");
-                return;
-            }
-
-            logger.LogInformation("Seeding demo application data...");
-
-            // Pass the logger instance
-            await CatalogDbSeeder.SeedAsync(services, logger);
-
-            logger.LogInformation("Demo data seeding completed successfully");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "An error occurred while seeding the database");
-            throw;
-        }
     }
 }

@@ -1,5 +1,6 @@
 using PolicyManagement.Application.Extensions;
 using PolicyManagement.Persistence.Extensions;
+using PolicyManagement.Persistence.Initialization;
 using PolicyManagementApp.Api.Middleware;
 using Scalar.AspNetCore;
 using Serilog;

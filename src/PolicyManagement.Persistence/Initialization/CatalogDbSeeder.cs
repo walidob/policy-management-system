@@ -73,7 +73,7 @@ public static class CatalogDbSeeder
         string email,
         string role,
         Guid tenantId,
-        string defaultPassword = "P@ssw0rd1!")
+        string defaultPassword = "1234")
     {
         // Check if user already exists
         var existingUser = await userManager.FindByEmailAsync(email);
