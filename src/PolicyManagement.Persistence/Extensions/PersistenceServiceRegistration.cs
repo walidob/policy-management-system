@@ -32,38 +32,6 @@ public static class PersistenceServiceRegistration
                     context.Set<ApplicationRole>().AddRange(roles);
                     context.SaveChanges();
                 }
-
-                // Seed policy types
-                var policyTypesExist = context.Set<PolicyTypeLookup>().Any();
-                if (!policyTypesExist)
-                {
-                    var policyTypes = Enum.GetValues(typeof(PolicyType))
-                        .Cast<PolicyType>()
-                        .Select(pt => new PolicyTypeLookup 
-                        { 
-                            Id = (int)pt, 
-                            Name = pt.ToString(),
-                        })
-                        .ToArray();
-                    context.Set<PolicyTypeLookup>().AddRange(policyTypes);
-                    context.SaveChanges();
-                }
-
-                // Seed claim statuses
-                var claimStatusesExist = context.Set<ClaimStatuLookup>().Any();
-                if (!claimStatusesExist)
-                {
-                    var claimStatuses = Enum.GetValues(typeof(ClaimStatus))
-                        .Cast<ClaimStatus>()
-                        .Select(cs => new ClaimStatuLookup 
-                        { 
-                            Id = (int)cs, 
-                            Name = cs.ToString(),
-                        })
-                        .ToArray();
-                    context.Set<ClaimStatuLookup>().AddRange(claimStatuses);
-                    context.SaveChanges();
-                }
             })
             .UseAsyncSeeding(async (context, _, cancellationToken) =>
             {
@@ -79,38 +47,6 @@ public static class PersistenceServiceRegistration
                             })
                             .ToArray();
                     await context.Set<ApplicationRole>().AddRangeAsync(roles);
-                    await context.SaveChangesAsync(cancellationToken);
-                }
-
-                // Seed policy types async
-                var policyTypesExist = await context.Set<PolicyTypeLookup>().AnyAsync(cancellationToken: cancellationToken);
-                if (!policyTypesExist)
-                {
-                    var policyTypes = Enum.GetValues(typeof(PolicyType))
-                        .Cast<PolicyType>()
-                        .Select(pt => new PolicyTypeLookup 
-                        { 
-                            Id = (int)pt, 
-                            Name = pt.ToString(),
-                        })
-                        .ToArray();
-                    await context.Set<PolicyTypeLookup>().AddRangeAsync(policyTypes);
-                    await context.SaveChangesAsync(cancellationToken);
-                }
-
-                // Seed claim statuses async
-                var claimStatusesExist = await context.Set<ClaimStatuLookup>().AnyAsync(cancellationToken: cancellationToken);
-                if (!claimStatusesExist)
-                {
-                    var claimStatuses = Enum.GetValues(typeof(ClaimStatus))
-                        .Cast<ClaimStatus>()
-                        .Select(cs => new ClaimStatuLookup 
-                        { 
-                            Id = (int)cs, 
-                            Name = cs.ToString(),
-                        })
-                        .ToArray();
-                    await context.Set<ClaimStatuLookup>().AddRangeAsync(claimStatuses);
                     await context.SaveChangesAsync(cancellationToken);
                 }
             }));

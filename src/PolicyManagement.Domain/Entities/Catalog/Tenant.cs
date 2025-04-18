@@ -24,7 +24,7 @@ public class Tenant
     public bool IsActive { get; set; } = true;
 
     [Required]
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; set; }
 

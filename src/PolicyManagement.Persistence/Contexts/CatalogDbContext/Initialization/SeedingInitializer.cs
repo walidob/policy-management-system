@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace PolicyManagement.Persistence.Initialization;
+namespace PolicyManagement.Persistence.Contexts.CatalogDbContext.Initialization;
 
 public static class SeedingInitializer
 {

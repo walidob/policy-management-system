@@ -13,8 +13,6 @@ public class CatalogDbContext : IdentityDbContext<ApplicationUser, ApplicationRo
     }
 
     public DbSet<Tenant> Tenants { get; set; }
-    public DbSet<PolicyTypeLookup> PolicyTypes { get; set; }
-    public DbSet<ClaimStatuLookup> ClaimStatuses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
