@@ -8,7 +8,7 @@ Push-Location (Join-Path $PSScriptRoot "..\..")
 $rootPath = Get-Location
 Write-Host "Working from solution root: $rootPath" -ForegroundColor Cyan
 
-$projectPath = "src/PolicyManagement.Persistence"
+$projectPath = "src/PolicyManagement.Infrastructure"
 $startupProject = "src/PolicyManagementApp.Api"
 
 Write-Host "Starting database migration process..." -ForegroundColor Cyan
@@ -18,13 +18,13 @@ try {
     Write-Host "Creating migrations..." -ForegroundColor Yellow
     
     Write-Host "Creating migration for CatalogDbContext..." -ForegroundColor Green
-    dotnet ef migrations add InitialMigration --project $projectPath --startup-project $startupProject -c CatalogDbContext -o Contexts/CatalogDbContext/Migrations
+    dotnet ef migrations add InitialMigration --project $projectPath --startup-project $startupProject -c CatalogDbContext -o DbContexts/CatalogDbContext/Migrations
     
     Write-Host "Creating migration for Tenant1DbContext..." -ForegroundColor Green
-    dotnet ef migrations add InitialMigration --project $projectPath --startup-project $startupProject -c Tenant1DbContext -o Contexts/TenantsDbContexts/Migrations/Tenant1
+    dotnet ef migrations add InitialMigration --project $projectPath --startup-project $startupProject -c Tenant1DbContext -o DbContexts/TenantsDbContexts/Migrations/Tenant1
     
     Write-Host "Creating migration for Tenant2DbContext..." -ForegroundColor Green
-    dotnet ef migrations add InitialMigration --project $projectPath --startup-project $startupProject -c Tenant2DbContext -o Contexts/TenantsDbContexts/Migrations/Tenant2
+    dotnet ef migrations add InitialMigration --project $projectPath --startup-project $startupProject -c Tenant2DbContext -o DbContexts/TenantsDbContexts/Migrations/Tenant2
     
     # Apply migrations to the database
     Write-Host "Applying migrations to databases..." -ForegroundColor Yellow

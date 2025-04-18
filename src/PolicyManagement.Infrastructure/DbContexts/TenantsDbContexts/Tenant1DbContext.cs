@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace PolicyManagement.Persistence.Contexts.TenantsDbContexts;
+namespace PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 
 public class Tenant1DbContext : TenantDbContextBase
 {

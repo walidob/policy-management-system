@@ -5,7 +5,7 @@ using PolicyManagement.Domain.Entities.Tenants;
 namespace PolicyManagementApp.Api.Controllers;
 
 [ApiController]
-[Route("api/policies")]
+[Route("api/[controller]")]
 public class PolicyController : ControllerBase
 {
     private readonly IPolicyService _policyService;

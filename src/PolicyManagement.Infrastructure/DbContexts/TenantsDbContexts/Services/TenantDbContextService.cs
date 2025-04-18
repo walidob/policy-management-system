@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace PolicyManagement.Persistence.Contexts.TenantsDbContexts.Services;
+namespace PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts.Services;
 
 public class TenantDbContextService
 {

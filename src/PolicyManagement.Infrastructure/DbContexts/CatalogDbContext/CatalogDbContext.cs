@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PolicyManagement.Domain.Entities.Catalog;
 using PolicyManagement.Domain.Entities.Identity;
 
-namespace PolicyManagement.Persistence.Contexts.CatalogDbContext;
+namespace PolicyManagement.Infrastructure.DbContexts.CatalogDbContext;
 
 public class CatalogDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>
 {
