@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using PolicyManagement.Domain.Entities.Catalog;
 using PolicyManagement.Domain.Entities.Identity;
 using PolicyManagement.Domain.Enums;
-using PolicyManagement.Persistence.Contexts.CatalogDbContext;
 
 namespace PolicyManagement.Persistence.Contexts.CatalogDbContext.Initialization;
 

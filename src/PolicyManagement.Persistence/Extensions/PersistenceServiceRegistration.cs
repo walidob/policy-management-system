@@ -2,10 +2,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using PolicyManagement.Domain.Entities.Catalog;
 using PolicyManagement.Domain.Entities.Identity;
 using PolicyManagement.Domain.Enums;
 using PolicyManagement.Persistence.Contexts.CatalogDbContext;
+using PolicyManagement.Persistence.Contexts.TenantsDbContexts.Services;
 
 namespace PolicyManagement.Persistence.Extensions;
 
@@ -26,7 +26,7 @@ public static class PersistenceServiceRegistration
                             .Cast<DefaultRoles>()
                             .Select(r => new ApplicationRole(r.ToString())
                             {
-                                NormalizedName=r.ToString().ToUpper(),  
+                                NormalizedName = r.ToString().ToUpper(),
                             })
                             .ToArray();
                     context.Set<ApplicationRole>().AddRange(roles);
@@ -66,6 +66,10 @@ public static class PersistenceServiceRegistration
             })
             .AddEntityFrameworkStores<CatalogDbContext>()
             .AddDefaultTokenProviders();
+
+        services.AddSingleton<TenantDbContextService>();
+        var tenantDbContextService = new TenantDbContextService(configuration);
+        tenantDbContextService.RegisterTenantDbContexts(services);
 
         return services;
     }
