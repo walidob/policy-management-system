@@ -30,8 +30,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyManagement.Infrastruc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyManagementApp.Api", "src\PolicyManagementApp.Api\PolicyManagementApp.Api.csproj", "{D8C39ABF-54DD-9993-0A97-38380BE682ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyManagement.Persistence", "src\PolicyManagement.Persistence\PolicyManagement.Persistence.csproj", "{EA0C049D-2C63-1190-3900-99B15942AC17}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -76,10 +74,6 @@ Global
 		{D8C39ABF-54DD-9993-0A97-38380BE682ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D8C39ABF-54DD-9993-0A97-38380BE682ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D8C39ABF-54DD-9993-0A97-38380BE682ED}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EA0C049D-2C63-1190-3900-99B15942AC17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EA0C049D-2C63-1190-3900-99B15942AC17}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EA0C049D-2C63-1190-3900-99B15942AC17}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EA0C049D-2C63-1190-3900-99B15942AC17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -94,7 +88,6 @@ Global
 		{4CED54BF-17A4-0EA5-3218-C0C142DD3838} = {EB874D51-56AE-4520-8D6A-083CB19DBA26}
 		{07267070-CE25-B05C-4968-4E65B84018F0} = {EB874D51-56AE-4520-8D6A-083CB19DBA26}
 		{D8C39ABF-54DD-9993-0A97-38380BE682ED} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{EA0C049D-2C63-1190-3900-99B15942AC17} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EC90F790-8478-401C-990F-637220BCBD5B}

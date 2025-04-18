@@ -1,35 +1,31 @@
 using PolicyManagement.Application.Extensions;
+using PolicyManagement.Infrastructure.DbContexts.CatalogDbContext.Initialization;
 using PolicyManagement.Infrastructure.Extensions;
-using PolicyManagement.Persistence.Contexts.CatalogDbContext.Initialization;
-using PolicyManagement.Persistence.Extensions;
 using PolicyManagementApp.Api.Middleware;
 using Scalar.AspNetCore;
 using Serilog;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilogConfiguration();
 
 Log.Information("API Starting Up.");
-builder.Services.AddApplicationServices();
-builder.Services.AddInfrastructureServices(builder.Configuration);
-builder.Services.AddPersistenceServices(builder.Configuration);
 
-builder.Services.AddResponseCaching();
+builder.Services.AddApplicationServices()
+    .AddInfrastructureServices(builder.Configuration)
+    .AddResponseCaching(); ;
 
 builder.Services.AddControllers();
-builder.Services.AddOpenApi(); // Swagger/OpenAPI
+builder.Services.AddOpenApi();
 
-Log.Information("Services registered.");
 
 var app = builder.Build();
 Log.Information("Application built.");
 
-Log.Information("Checking if demo data seeding is enabled...");
 await app.Services.SeedDataAsync();
 
 Log.Information("Configuring middleware pipeline.");
+
 app.UseDefaultFiles();
 app.MapStaticAssets();
 
@@ -38,7 +34,7 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
     app.MapOpenApi();
     app.MapScalarApiReference();
-    app.UseSerilogRequestLogging(); // Log HTTP Requests
+    app.UseSerilogRequestLogging();
 }
 else
 {
@@ -52,12 +48,13 @@ app.UseHttpsRedirection();
 
 app.UseResponseCaching();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.MapFallbackToFile("/index.html");
-Log.Information("Middleware pipeline configured.");
 
-Log.Information("Running application.");
+Log.Information("Application running.");
+
 app.Run();

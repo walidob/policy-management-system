@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PolicyManagement.Domain.Entities.Tenants;
 
-namespace PolicyManagement.Persistence.Configurations.Tenants;
+namespace PolicyManagement.Infrastructure.Configurations.Tenants;
 
 public class PolicyConfiguration : IEntityTypeConfiguration<Policy>
 {

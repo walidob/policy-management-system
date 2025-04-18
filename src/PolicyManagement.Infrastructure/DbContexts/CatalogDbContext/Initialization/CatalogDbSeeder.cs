@@ -6,7 +6,7 @@ using PolicyManagement.Domain.Entities.Catalog;
 using PolicyManagement.Domain.Entities.Identity;
 using PolicyManagement.Domain.Enums;
 
-namespace PolicyManagement.Persistence.Contexts.CatalogDbContext.Initialization;
+namespace PolicyManagement.Infrastructure.DbContexts.CatalogDbContext.Initialization;
 
 public static class CatalogDbSeeder
 {
@@ -59,7 +59,7 @@ public static class CatalogDbSeeder
         string email,
         string role,
         int tenantId,
-        string defaultPassword = "1234")
+        string defaultPassword = "P@ssw0rd")
     {
         // Check if user already exists
         var existingUser = await userManager.FindByEmailAsync(email);

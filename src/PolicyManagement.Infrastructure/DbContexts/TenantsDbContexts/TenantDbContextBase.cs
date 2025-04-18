@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PolicyManagement.Domain.Entities.Catalog;
 using PolicyManagement.Domain.Entities.Tenants;
 
-namespace PolicyManagement.Persistence.Contexts.TenantsDbContexts;
+namespace PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 
 public abstract class TenantDbContextBase : DbContext
 {

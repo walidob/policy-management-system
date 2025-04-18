@@ -30,20 +30,6 @@ public class PolicyService : IPolicyService
         return await _unitOfWork.PolicyRepository.GetByIdAsync(id);
     }
 
-    public async Task<List<Policy>> GetActivePoliciesAsync()
-    {
-        _logger.LogInformation("Get active policies");
-
-        return await _unitOfWork.PolicyRepository.GetActivePoliciesAsync();
-    }
-
-    public async Task<List<Policy>> GetPoliciesByTypeAsync(int typeId)
-    {
-        _logger.LogInformation("Get policies type {TypeId}", typeId);
-
-        return await _unitOfWork.PolicyRepository.GetByPolicyTypeAsync(typeId);
-    }
-
     public async Task<Policy> CreatePolicyAsync(Policy policy)
     {
         _logger.LogInformation("Create policy {PolicyName}", policy.Name);
