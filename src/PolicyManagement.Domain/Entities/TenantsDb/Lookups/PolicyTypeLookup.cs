@@ -1,4 +1,4 @@
-namespace PolicyManagement.Domain.Entities.Catalog;
+namespace PolicyManagement.Domain.Entities.TenantsDb.Lookup;
 
 public class PolicyTypeLookup
 {

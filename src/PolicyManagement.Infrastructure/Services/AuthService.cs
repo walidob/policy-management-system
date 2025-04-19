@@ -1,15 +1,14 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using PolicyManagement.Application.Contracts.Identity;
-using PolicyManagement.Domain.Entities.Identity;
+using PolicyManagement.Domain.Entities.DefaultDb.Identity;
 
-namespace PolicyManagement.Infrastructure.Identity.Services
+namespace PolicyManagement.Infrastructure.Services
 {
     public class AuthService : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly IJwtTokenService _jwtTokenGenerator;
         private readonly ILogger<AuthService> _logger;
 
@@ -22,7 +21,6 @@ namespace PolicyManagement.Infrastructure.Identity.Services
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _roleManager = roleManager;
             _jwtTokenGenerator = jwtTokenGenerator;
             _logger = logger;
         }

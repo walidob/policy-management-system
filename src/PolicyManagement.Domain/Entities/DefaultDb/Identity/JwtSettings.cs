@@ -1,4 +1,4 @@
-namespace PolicyManagement.Domain.Entities.Identity
+namespace PolicyManagement.Domain.Entities.DefaultDb.Identity
 {
     public class JwtSettings
     {

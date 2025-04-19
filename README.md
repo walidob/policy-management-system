@@ -38,5 +38,3 @@ When working solely on the API, you can unload the frontend project to achieve f
 1. Right-click on the frontend project in Solution Explorer
 2. Select "Unload Project"
 3. When you need to work with the frontend again, right-click the unloaded project and select "Reload Project"
-
-

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PolicyManagement.Application.Interfaces.Services;
-using PolicyManagement.Domain.Entities.Tenants;
+using PolicyManagement.Domain.Entities.TenantsDb;
 
 namespace PolicyManagementApp.Api.Controllers;
 

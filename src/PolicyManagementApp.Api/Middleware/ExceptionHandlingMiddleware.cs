@@ -26,15 +26,32 @@ public class ExceptionHandlingMiddleware
 
     private static Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        // Log the exception details
-        Log.Error(exception, 
-            "Unhandled exception: {Path}", 
-            context.Request.Path.Value);
+        Log.Error(exception, "Unhandled exception: {Path}", context.Request.Path.Value);
+
+        var statusCode = StatusCodes.Status500InternalServerError;
+        var message = "An internal server error occurred.";
+
+        // Custom exception handling based on exception type
+        switch (exception)
+        {
+            case InvalidOperationException:
+                statusCode = StatusCodes.Status400BadRequest;
+                message = exception.Message;
+                break;
+            case UnauthorizedAccessException:
+                statusCode = StatusCodes.Status401Unauthorized;
+                message = "Unauthorized access.";
+                break;
+            case KeyNotFoundException:
+                statusCode = StatusCodes.Status404NotFound;
+                message = "Resource not found.";
+                break;
+        }
 
         var errorResponse = new ErrorResponseModel
         {
-            Error = "An internal server error occurred.",
-            StatusCode = StatusCodes.Status500InternalServerError
+            Error = message,
+            StatusCode = statusCode
         };
 
         context.Response.ContentType = "application/json";

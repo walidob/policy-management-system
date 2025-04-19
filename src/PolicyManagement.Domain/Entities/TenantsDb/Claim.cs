@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace PolicyManagement.Domain.Entities.Tenants;
+namespace PolicyManagement.Domain.Entities.TenantsDb;
 
 public class Claim
 {
@@ -21,9 +21,17 @@ public class Claim
     
     [Required]
     public int Status { get; set; }
+    
+    [Required]
+    public string ClaimNumber { get; set; }
 
     [ForeignKey(nameof(Policy))]
     public int PolicyId { get; set; }
     
     public virtual Policy Policy { get; set; }
+    
+    [ForeignKey(nameof(ClientId))]
+    public int? ClientId { get; set; }
+    
+    public virtual Client Client { get; set; }
 }

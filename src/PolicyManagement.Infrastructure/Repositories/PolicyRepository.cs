@@ -1,15 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using PolicyManagement.Application.Interfaces.Repositories;
-using PolicyManagement.Domain.Entities.Tenants;
+using PolicyManagement.Domain.Entities.TenantsDb;
+using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 
 namespace PolicyManagement.Infrastructure.Repositories;
 
 public class PolicyRepository : IPolicyRepository
 {
-    private readonly DbContext _dbContext;
+    private readonly TenantDbContextBase _dbContext;
     private readonly DbSet<Policy> _policies;
 
-    public PolicyRepository(DbContext dbContext)
+    public PolicyRepository(TenantDbContextBase dbContext)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _policies = _dbContext.Set<Policy>();
@@ -32,7 +33,9 @@ public class PolicyRepository : IPolicyRepository
     public async Task<(List<Policy> Policies, int TotalCount)> GetAllPaginatedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         IQueryable<Policy> query = _policies;
+            var totalCoun3t = await _dbContext.Policies.CountAsync(cancellationToken);
         
+ 
         var totalCount = await query.CountAsync(cancellationToken);
         
         var policies = await query

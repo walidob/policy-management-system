@@ -1,7 +1,6 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace PolicyManagement.Domain.Entities.Identity
+namespace PolicyManagement.Domain.Entities.DefaultDb.Identity
 {
     public class AuthenticationRequest
     {
