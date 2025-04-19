@@ -12,6 +12,7 @@ public class TenantDbContextBase : DbContext
     private readonly IConfiguration _configuration;
     private readonly IMultiTenantContextAccessor _multiTenantContextAccessor;
 
+    // Constructor for MultiTenant DbContext 
     public TenantDbContextBase(
         DbContextOptions<TenantDbContextBase> options, 
         IMultiTenantContextAccessor multiTenantContextAccessor,
