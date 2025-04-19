@@ -1,12 +1,12 @@
-using PolicyManagement.Domain.Entities.TenantsDb;
+using PolicyManagement.Application.DTOs.Policy;
 
 namespace PolicyManagement.Application.Interfaces.Services;
 
 public interface IPolicyService
 {
-    Task<Policy> GetPolicyByIdAsync(int id);
-    Task<Policy> CreatePolicyAsync(Policy policy);
-    Task<Policy> UpdatePolicyAsync(int id, Policy policy);
-    Task<Policy> DeletePolicyAsync(int id);
-    Task<(List<Policy> Policies, int TotalCount)> GetPoliciesPaginatedAsync(int pageNumber, int pageSize);
+    Task<PolicyDto> GetPolicyByIdAsync(int id);
+    Task<PolicyDto> CreatePolicyAsync(CreatePolicyDto createPolicyDto);
+    Task<PolicyDto> UpdatePolicyAsync(int id, UpdatePolicyDto updatePolicyDto);
+    Task<PolicyDto> DeletePolicyAsync(int id);
+    Task<PolicyResponseDto> GetPoliciesPaginatedAsync(int pageNumber, int pageSize);
 } 

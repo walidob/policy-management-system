@@ -1,9 +1,9 @@
 ﻿using Finbuckle.MultiTenant.Abstractions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PolicyManagement.Domain.Entities.DefaultDb;
+using PolicyManagement.Infrastructure.Cache;
 using PolicyManagement.Infrastructure.DbContexts.DefaultDb;
 
 namespace PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
@@ -11,40 +11,38 @@ public class DynamicConnectionStringStore : IMultiTenantStore<AppTenantInfo>
 {
     private readonly ILogger<DynamicConnectionStringStore> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly IMemoryCache _cache;
-    private readonly TimeSpan _cacheSlidingExpiration;
+    private readonly ICacheHelper _cacheHelper;
     private const string CacheKeyPrefix = "tenant_";
 
     public DynamicConnectionStringStore(
         ILogger<DynamicConnectionStringStore> logger,
         IServiceProvider serviceProvider,
-        IMemoryCache cache)
+        ICacheHelper cacheHelper)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _cacheSlidingExpiration = TimeSpan.FromMinutes(30);
+        _cacheHelper = cacheHelper ?? throw new ArgumentNullException(nameof(cacheHelper));
     }
 
     public async Task<AppTenantInfo?> TryGetByIdentifierAsync(string id)
     {
         var cacheKey = $"{CacheKeyPrefix}{id}";
-        if (_cache.TryGetValue(cacheKey, out AppTenantInfo? tenant))
-        {
+        if (_cacheHelper.TryGetValue(cacheKey, out AppTenantInfo? tenant))
             return tenant;
-        }
 
         try
         {
             using var scope = _serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
             
-            tenant = await dbContext.Tenants.FirstOrDefaultAsync(t => t.Id == id);
-            
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetSlidingExpiration(_cacheSlidingExpiration);
+            tenant = await dbContext.Tenants
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == id);
                 
-            _cache.Set(cacheKey, tenant, cacheOptions);
+            if (tenant != null)
+            {
+                _cacheHelper.Set(cacheKey, tenant);
+            }
             
             return tenant;
         }
@@ -64,14 +62,14 @@ public class DynamicConnectionStringStore : IMultiTenantStore<AppTenantInfo>
             using var scope = _serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
             
-            var tenants = await dbContext.Tenants.ToListAsync();
+            var tenants = await dbContext.Tenants
+                .AsNoTracking()
+                .ToListAsync();
   
             foreach (var tenant in tenants)
             {
                 var cacheKey = $"{CacheKeyPrefix}{tenant.Id}";
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetSlidingExpiration(_cacheSlidingExpiration);
-                _cache.Set(cacheKey, tenant, cacheOptions);
+                _cacheHelper.Set(cacheKey, tenant);
             }
             
             return tenants;

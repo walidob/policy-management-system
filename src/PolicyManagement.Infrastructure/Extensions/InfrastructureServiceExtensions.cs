@@ -10,6 +10,7 @@ using PolicyManagement.Application.Interfaces.Repositories;
 using PolicyManagement.Application.Interfaces.Services;
 using PolicyManagement.Domain.Entities.DefaultDb;
 using PolicyManagement.Domain.Entities.DefaultDb.Identity;
+using PolicyManagement.Infrastructure.Cache;
 using PolicyManagement.Infrastructure.DbContexts.DefaultDb;
 using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts.Initialization;
@@ -53,6 +54,9 @@ public static class InfrastructureServiceExtensions
 
     private static void RegisterRepositoriesAndServices(IServiceCollection services)
     {
+        // Register Cache Helper
+        services.AddSingleton<ICacheHelper, CacheHelper>();
+        
         // Register repositories
         services.AddScoped<IPolicyRepository, PolicyRepository>();
         

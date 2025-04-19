@@ -1,4 +1,6 @@
+using AutoMapper;
 using Microsoft.Extensions.Logging;
+using PolicyManagement.Application.DTOs.Policy;
 using PolicyManagement.Application.Interfaces.Repositories;
 using PolicyManagement.Application.Interfaces.Services;
 using PolicyManagement.Domain.Entities.TenantsDb;
@@ -9,43 +11,58 @@ public class PolicyService : IPolicyService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PolicyService> _logger;
+    private readonly IMapper _mapper;
 
-    public PolicyService(IUnitOfWork unitOfWork, ILogger<PolicyService> logger)
+    public PolicyService(IUnitOfWork unitOfWork, ILogger<PolicyService> logger, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _mapper = mapper;
     }
 
-    public async Task<(List<Policy> Policies, int TotalCount)> GetPoliciesPaginatedAsync(int pageNumber, int pageSize)
+    public async Task<PolicyResponseDto> GetPoliciesPaginatedAsync(int pageNumber, int pageSize)
     {
         _logger.LogInformation("Get policies page {PageNumber}/{PageSize}", pageNumber, pageSize);
 
-        return await _unitOfWork.PolicyRepository.GetAllPaginatedAsync(pageNumber, pageSize);
+        var (policies, totalCount) = await _unitOfWork.PolicyRepository.GetAllPaginatedAsync(pageNumber, pageSize);
+        
+        var policyDtos = _mapper.Map<List<PolicyDto>>(policies);
+        
+        return new PolicyResponseDto
+        {
+            Policies = policyDtos,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
-    public async Task<Policy> GetPolicyByIdAsync(int id)
+    public async Task<PolicyDto> GetPolicyByIdAsync(int id)
     {
         _logger.LogInformation("Get policy {PolicyId}", id);
 
-        return await _unitOfWork.PolicyRepository.GetByIdAsync(id);
+        var policy = await _unitOfWork.PolicyRepository.GetByIdAsync(id);
+        return _mapper.Map<PolicyDto>(policy);
     }
 
-    public async Task<Policy> CreatePolicyAsync(Policy policy)
+    public async Task<PolicyDto> CreatePolicyAsync(CreatePolicyDto createPolicyDto)
     {
-        _logger.LogInformation("Create policy {PolicyName}", policy.Name);
+        _logger.LogInformation("Create policy {PolicyName}", createPolicyDto.Name);
 
         try
         {
+            var policy = _mapper.Map<Policy>(createPolicyDto);
+            
             await _unitOfWork.BeginTransactionAsync();
             await _unitOfWork.PolicyRepository.AddAsync(policy);
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();
 
-            return policy;
+            return _mapper.Map<PolicyDto>(policy);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating policy: {PolicyName}", policy.Name);
+            _logger.LogError(ex, "Error creating policy: {PolicyName}", createPolicyDto.Name);
 
             await _unitOfWork.RollbackTransactionAsync();
 
@@ -53,25 +70,32 @@ public class PolicyService : IPolicyService
         }
     }
 
-    public async Task<Policy> UpdatePolicyAsync(int id, Policy policy)
+    public async Task<PolicyDto> UpdatePolicyAsync(int id, UpdatePolicyDto updatePolicyDto)
     {
         _logger.LogInformation("Update policy {PolicyId}", id);
-        
-        if (id != policy.Id)
-        {
-            _logger.LogWarning("ID not found. Policy: {PolicyId}", id);
-
-            throw new ArgumentException("ID not found");
-        }
 
         try
         {
+            if (updatePolicyDto.Id != id)
+            {
+                throw new ArgumentException("ID not found");
+            }
+
+            var existingPolicy = await _unitOfWork.PolicyRepository.GetByIdAsync(id);
+            if (existingPolicy == null)
+            {
+                throw new KeyNotFoundException($"Policy with ID {id} not found");
+            }
+            
+            var policy = _mapper.Map<Policy>(updatePolicyDto);
+            policy.CreationDate = existingPolicy.CreationDate;
+            
             await _unitOfWork.BeginTransactionAsync();
             await _unitOfWork.PolicyRepository.UpdateAsync(policy);
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();
 
-            return policy;
+            return _mapper.Map<PolicyDto>(policy);
         }
         catch (Exception ex)
         {
@@ -83,10 +107,8 @@ public class PolicyService : IPolicyService
         }
     }
 
-    public async Task<Policy> DeletePolicyAsync(int id)
+    public async Task<PolicyDto> DeletePolicyAsync(int id)
     {
-        _logger.LogInformation("Cannot delete policy {PolicyId}", id);
-
         try
         {
             await _unitOfWork.BeginTransactionAsync();
@@ -100,7 +122,7 @@ public class PolicyService : IPolicyService
             
             await _unitOfWork.CommitTransactionAsync();
 
-            return policy;
+            return _mapper.Map<PolicyDto>(policy);
         }
         catch (Exception ex)
         {
