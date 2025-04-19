@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PolicyManagement.Application.Contracts.Identity;
-using PolicyManagement.Domain.Entities.Identity;
+using PolicyManagement.Domain.Entities.DefaultDb.Identity;
 
 namespace PolicyManagementApp.Api.Controllers
 {

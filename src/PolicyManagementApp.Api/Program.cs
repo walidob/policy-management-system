@@ -1,5 +1,7 @@
+using Finbuckle.MultiTenant;
 using PolicyManagement.Application.Extensions;
-using PolicyManagement.Infrastructure.DbContexts.CatalogDbContext.Initialization;
+using PolicyManagement.Infrastructure.DbContexts.DefaultDb.Initialization;
+using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts.Initialization;
 using PolicyManagement.Infrastructure.Extensions;
 using PolicyManagementApp.Api.Middleware;
 using Scalar.AspNetCore;
@@ -16,13 +18,17 @@ builder.Services.AddApplicationServices()
     .AddResponseCaching(); ;
 
 builder.Services.AddControllers();
+builder.Services.AddMemoryCache(); 
 builder.Services.AddOpenApi();
 
 
 var app = builder.Build();
 Log.Information("Application built.");
 
-await app.Services.SeedDataAsync();
+
+await app.Services.SeedDefaultDbDataAsync();
+await app.Services.ApplyTenantsDbsMigrationsAsync();
+await app.Services.SeedTenantsDbsDataAsync();
 
 Log.Information("Configuring middleware pipeline.");
 
@@ -50,6 +56,7 @@ app.UseResponseCaching();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMultiTenant();
 
 app.MapControllers();
 

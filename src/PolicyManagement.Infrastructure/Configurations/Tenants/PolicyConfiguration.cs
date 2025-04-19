@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using PolicyManagement.Domain.Entities.Tenants;
+using PolicyManagement.Domain.Entities.TenantsDb;
 
 namespace PolicyManagement.Infrastructure.Configurations.Tenants;
 

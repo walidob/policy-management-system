@@ -1,4 +1,4 @@
-using PolicyManagement.Domain.Entities.Identity;
+using PolicyManagement.Domain.Entities.DefaultDb.Identity;
 
 namespace PolicyManagement.Application.Contracts.Identity
 {

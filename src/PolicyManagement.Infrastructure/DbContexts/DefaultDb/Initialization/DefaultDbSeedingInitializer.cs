@@ -2,23 +2,21 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace PolicyManagement.Infrastructure.DbContexts.CatalogDbContext.Initialization;
+namespace PolicyManagement.Infrastructure.DbContexts.DefaultDb.Initialization;
 
-public static class SeedingInitializer
+public static class DefaultDbSeedingInitializer
 {
-    public static async Task SeedDataAsync(this IServiceProvider serviceProvider)
+    public static async Task SeedDefaultDbDataAsync(this IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();
         var services = scope.ServiceProvider;
 
-        // Get logger for this context
         var logger = services.GetRequiredService<ILogger<object>>();
 
         try
         {
             var configuration = services.GetRequiredService<IConfiguration>();
 
-            // Check EnableSeedData
             var enableSeedData = configuration.GetSection("FeatureFlags").GetValue("EnableSeedData", false);
 
             if (!enableSeedData)
@@ -26,16 +24,15 @@ public static class SeedingInitializer
                 return;
             }
 
-            logger.LogInformation("Seeding demo application data...");
+            logger.LogInformation("Seeding data");
 
-            // Pass the logger instance
-            await CatalogDbSeeder.SeedAsync(services, logger);
+            await DefaultDbSeeder.SeedAsync(services, logger);
 
-            logger.LogInformation("Demo data seeding completed successfully");
+            logger.LogInformation("Data seeding completed successfully");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "An error occurred while seeding the database");
+            logger.LogError(ex, "An error occurred while seeding");
             throw;
         }
     }

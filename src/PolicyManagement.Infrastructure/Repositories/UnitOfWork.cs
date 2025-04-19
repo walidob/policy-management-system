@@ -1,17 +1,17 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using PolicyManagement.Application.Interfaces.Repositories;
+using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 
 namespace PolicyManagement.Infrastructure.Repositories;
 
 public class UnitOfWork : IUnitOfWork
 {
-    private readonly DbContext _dbContext;
+    private readonly TenantDbContextBase _dbContext;
     private IDbContextTransaction _transaction;
-    
+
     private IPolicyRepository _policyRepository;
 
-    public UnitOfWork(DbContext dbContext)
+    public UnitOfWork(TenantDbContextBase dbContext)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     }
@@ -44,4 +44,4 @@ public class UnitOfWork : IUnitOfWork
         _dbContext.Dispose();
         GC.SuppressFinalize(this);
     }
-} 
+}

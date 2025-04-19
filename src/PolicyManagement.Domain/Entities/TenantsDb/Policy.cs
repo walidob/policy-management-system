@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using PolicyManagement.Domain.Entities.Catalog;
+using PolicyManagement.Domain.Entities.TenantsDb.Lookup;
 
-namespace PolicyManagement.Domain.Entities.Tenants;
+namespace PolicyManagement.Domain.Entities.TenantsDb;
 
 public class Policy
 {
@@ -17,17 +17,25 @@ public class Policy
     public string Description { get; set; }
 
     [Required]
-    public DateTime CreationDate { get; set; } = DateTime.UtcNow;
+    public DateTime CreationDate { get; set; }
 
     [Required]
     public DateTime EffectiveDate { get; set; }
 
     [Required]
     public DateTime ExpiryDate { get; set; }
+    
+    public bool IsActive { get; set; } = true;
 
     [Required]
     [ForeignKey(nameof(PolicyType))]
     public int PolicyTypeId { get; set; }
     
     public virtual PolicyTypeLookup PolicyType { get; set; }
+
+    // A policy can have multiple clients
+    public virtual ICollection<ClientPolicy> ClientPolicies { get; set; } = [];
+    
+    // A policy can have multiple claims
+    public virtual ICollection<Claim> Claims { get; set; } = [];
 }

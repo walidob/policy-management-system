@@ -1,4 +1,4 @@
-using PolicyManagement.Domain.Entities.Tenants;
+using PolicyManagement.Domain.Entities.TenantsDb;
 
 namespace PolicyManagement.Application.Interfaces.Repositories;
 public interface IPolicyRepository

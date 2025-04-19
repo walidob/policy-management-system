@@ -1,11 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
-using PolicyManagement.Domain.Entities.Catalog;
 
-namespace PolicyManagement.Domain.Entities.Identity;
+namespace PolicyManagement.Domain.Entities.DefaultDb.Identity;
 
-public class ApplicationUser : IdentityUser<int> //use int instead of string
+public class ApplicationUser : IdentityUser<int>
 {
     [MaxLength(100)]
     public string? FirstName { get; set; }
@@ -14,7 +13,7 @@ public class ApplicationUser : IdentityUser<int> //use int instead of string
     public string? LastName { get; set; }
 
     [ForeignKey("Tenant")]
-    public int? TenantId { get; set; }
+    public string? TenantId { get; set; }
 
-    public virtual Tenant? Tenant { get; set; }
+    public virtual AppTenantInfo? Tenant { get; set; }
 }

@@ -1,18 +1,18 @@
+using Finbuckle.MultiTenant;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using PolicyManagement.Application.Contracts.Identity;
 using PolicyManagement.Application.Interfaces.Repositories;
 using PolicyManagement.Application.Interfaces.Services;
-using PolicyManagement.Domain.Entities.Identity;
-using PolicyManagement.Domain.Enums;
-using PolicyManagement.Infrastructure.DbContexts.CatalogDbContext;
-using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts.Services;
-using PolicyManagement.Infrastructure.Identity.Services;
+using PolicyManagement.Domain.Entities.DefaultDb;
+using PolicyManagement.Domain.Entities.DefaultDb.Identity;
+using PolicyManagement.Infrastructure.DbContexts.DefaultDb;
+using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
+using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts.Initialization;
 using PolicyManagement.Infrastructure.Repositories;
 using PolicyManagement.Infrastructure.Services;
 using System.Text;
@@ -29,23 +29,30 @@ public static class InfrastructureServiceExtensions
         // Register infrastructure services here
         RegisterRepositoriesAndServices(services);
         
-        // Configure JWT Authentication
-        ConfigureJwtAuthentication(services, configuration);
-        
         // Configure Database Contexts
         ConfigureDatabaseContexts(services, configuration);
         
         // Configure Identity
         ConfigureIdentity(services);
-        
+
+        // Configure FinbuckleMultiTenant
+        ConfigureFinbuckleMultiTenant(services, configuration);
+
+        // Configure JWT Authentication - must be after Finbuckle configuration
+        ConfigureJwtAuthentication(services, configuration);
+
         return services;
     }
-    
+
+    private static void ConfigureFinbuckleMultiTenant(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddMultiTenant<AppTenantInfo>()
+                    .WithClaimStrategy("apptenid")
+                    .WithStore<DynamicConnectionStringStore>(ServiceLifetime.Scoped);
+    }
+
     private static void RegisterRepositoriesAndServices(IServiceCollection services)
     {
-        // Register base DbContext
-        services.AddScoped<DbContext, CatalogDbContext>();
-        
         // Register repositories
         services.AddScoped<IPolicyRepository, PolicyRepository>();
         
@@ -54,7 +61,9 @@ public static class InfrastructureServiceExtensions
         
         // Register Services
         services.AddScoped<IPolicyService, PolicyService>();
-        
+        services.AddScoped<TenantMigrationService>();
+        services.AddScoped<TenantDataSeeder>();
+
         // Register Authentication Services
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
@@ -82,54 +91,17 @@ public static class InfrastructureServiceExtensions
                 ValidIssuer = jwtSettings.Issuer,
                 ValidAudience = jwtSettings.Audience,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
-                ClockSkew = TimeSpan.Zero // Remove delay of token when expire
+                ClockSkew = TimeSpan.Zero
             };
         });
     }
     
     private static void ConfigureDatabaseContexts(IServiceCollection services, IConfiguration configuration)
     {
-        // Catalog DB Context
-        services.AddDbContext<CatalogDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("Catalog"))
-            .UseSeeding((context, _) =>//This is the latest way for seeding data in .NET9 (more info:https://learn.microsoft.com/en-us/ef/core/modeling/data-seeding)
-            {
-                // Seed roles
-                var roleExists = context.Set<ApplicationRole>().Any();
-                if (!roleExists)
-                {
-                    var roles = Enum.GetValues(typeof(DefaultRoles))
-                            .Cast<DefaultRoles>()
-                            .Select(r => new ApplicationRole(r.ToString())
-                            {
-                                NormalizedName = r.ToString().ToUpper(),
-                            })
-                            .ToArray();
-                    context.Set<ApplicationRole>().AddRange(roles);
-                    context.SaveChanges();
-                }
-            })
-            .UseAsyncSeeding(async (context, _, cancellationToken) =>
-            {
-                // Seed roles async
-                var roleExists = await context.Set<ApplicationRole>().AnyAsync(cancellationToken: cancellationToken);
-                if (!roleExists)
-                {
-                    var roles = Enum.GetValues(typeof(DefaultRoles))
-                            .Cast<DefaultRoles>()
-                            .Select(r => new ApplicationRole(r.ToString())
-                            {
-                                NormalizedName = r.ToString().ToUpper(),
-                            })
-                            .ToArray();
-                    await context.Set<ApplicationRole>().AddRangeAsync(roles);
-                    await context.SaveChangesAsync(cancellationToken);
-                }
-            }));
-            
-        services.AddSingleton<TenantDbContextService>();
-        var tenantDbContextService = new TenantDbContextService(configuration);
-        tenantDbContextService.RegisterTenantDbContexts(services);
+        services.AddDbContext<DefaultDbContext>(options =>
+            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+        
+        services.AddDbContext<TenantDbContextBase>(ServiceLifetime.Scoped);
     }
     
     private static void ConfigureIdentity(IServiceCollection services)
@@ -144,7 +116,7 @@ public static class InfrastructureServiceExtensions
             options.Password.RequireLowercase = true;
             options.User.RequireUniqueEmail = true;
         })
-         .AddEntityFrameworkStores<CatalogDbContext>()
+         .AddEntityFrameworkStores<DefaultDbContext>()
          .AddDefaultTokenProviders();
     }
 } 
