@@ -5,5 +5,6 @@ namespace PolicyManagement.Application.Contracts.Identity
     public interface IAuthService
     {
         Task<AuthenticationResponse> AuthenticateAsync(AuthenticationRequest request);
+        Task LogoutAsync();
     }
 }

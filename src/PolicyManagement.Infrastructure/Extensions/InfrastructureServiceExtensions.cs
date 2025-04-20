@@ -10,11 +10,13 @@ using PolicyManagement.Application.Interfaces.Repositories;
 using PolicyManagement.Application.Interfaces.Services;
 using PolicyManagement.Domain.Entities.DefaultDb;
 using PolicyManagement.Domain.Entities.DefaultDb.Identity;
+using PolicyManagement.Infrastructure.Cache;
 using PolicyManagement.Infrastructure.DbContexts.DefaultDb;
 using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts.Initialization;
 using PolicyManagement.Infrastructure.Repositories;
 using PolicyManagement.Infrastructure.Services;
+using PolicyManagement.Infrastructure.Services.Identity;
 using System.Text;
 
 namespace PolicyManagement.Infrastructure.Extensions;
@@ -23,22 +25,16 @@ public static class InfrastructureServiceExtensions
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Configure JWT Settings
         services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
         
-        // Register infrastructure services here
         RegisterRepositoriesAndServices(services);
         
-        // Configure Database Contexts
         ConfigureDatabaseContexts(services, configuration);
         
-        // Configure Identity
         ConfigureIdentity(services);
 
-        // Configure FinbuckleMultiTenant
         ConfigureFinbuckleMultiTenant(services, configuration);
 
-        // Configure JWT Authentication - must be after Finbuckle configuration
         ConfigureJwtAuthentication(services, configuration);
 
         return services;
@@ -53,18 +49,17 @@ public static class InfrastructureServiceExtensions
 
     private static void RegisterRepositoriesAndServices(IServiceCollection services)
     {
-        // Register repositories
+        services.AddSingleton<ICacheHelper, CacheHelper>();
+        
         services.AddScoped<IPolicyRepository, PolicyRepository>();
         
-        // Register Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         
-        // Register Services
         services.AddScoped<IPolicyService, PolicyService>();
         services.AddScoped<TenantMigrationService>();
         services.AddScoped<TenantDataSeeder>();
+        services.AddScoped<IMultipleTenantPolicyService, MultipleTenantPolicyService>();
 
-        // Register Authentication Services
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
     }

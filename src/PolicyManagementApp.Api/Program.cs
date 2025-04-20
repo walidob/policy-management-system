@@ -15,16 +15,33 @@ Log.Information("API Starting Up.");
 
 builder.Services.AddApplicationServices()
     .AddInfrastructureServices(builder.Configuration)
-    .AddResponseCaching(); ;
+    .AddResponseCaching();
 
 builder.Services.AddControllers();
 builder.Services.AddMemoryCache(); 
+builder.Services.AddProblemDetails();
+
 builder.Services.AddOpenApi();
 
+builder.Services.AddHealthChecks();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("ProductionPolicy", policy =>
+    {
+        var allowedOrigins = builder.Configuration["CorsSettings:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries) 
+                            ?? ["https://domain1.com"];
+        
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
-Log.Information("Application built.");
 
+Log.Information("Application built.");
 
 await app.Services.SeedDefaultDbDataAsync();
 await app.Services.ApplyTenantsDbsMigrationsAsync();
@@ -32,33 +49,34 @@ await app.Services.SeedTenantsDbsDataAsync();
 
 Log.Information("Configuring middleware pipeline.");
 
-app.UseDefaultFiles();
-app.MapStaticAssets();
+// Global exception handling middleware
+app.UseGlobalExceptionHandler();
 
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
+    app.UseHsts();
+    app.UseCors("ProductionPolicy");
+}
+else
+{
     app.MapOpenApi();
     app.MapScalarApiReference();
     app.UseSerilogRequestLogging();
 }
-else
-{
-    app.UseMiddleware<ExceptionHandlingMiddleware>();
-    app.UseHsts();
-}
 
+app.UseDefaultFiles();
+app.MapStaticAssets();
+app.UseHttpsRedirection();
 app.UseStatusCodePages();
 
-app.UseHttpsRedirection();
-
 app.UseResponseCaching();
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMultiTenant();
 
 app.MapControllers();
+
+app.MapHealthChecks("/health");
 
 app.MapFallbackToFile("/index.html");
 

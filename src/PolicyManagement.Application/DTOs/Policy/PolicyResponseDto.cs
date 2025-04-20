@@ -7,4 +7,7 @@ public class PolicyResponseDto //Used for pagination
     public int PageNumber { get; set; }
     public int PageSize { get; set; }
     public int TotalPages => (TotalCount + PageSize - 1) / PageSize;
+    
+    public string? TenantId { get; set; }
+    public string? TenantName { get; set; }
 } 

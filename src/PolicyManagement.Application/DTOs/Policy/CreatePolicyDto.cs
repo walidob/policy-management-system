@@ -19,4 +19,6 @@ public class CreatePolicyDto
 
     [Required]
     public int PolicyTypeId { get; set; }
+    
+    public string TenantId { get; set; }
 }
