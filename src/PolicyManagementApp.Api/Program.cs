@@ -21,6 +21,8 @@ builder.Services.AddControllers();
 builder.Services.AddMemoryCache(); 
 builder.Services.AddOpenApi();
 
+builder.Services.AddHealthChecks();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ProductionPolicy", policy =>
@@ -70,6 +72,10 @@ app.UseAuthorization();
 app.UseMultiTenant();
 
 app.MapControllers();
+
+// Map health check endpoint
+app.MapHealthChecks("/health");
+
 app.MapFallbackToFile("/index.html");
 
 Log.Information("Application running.");
