@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.Logging;
 using PolicyManagement.Application.Interfaces.Repositories;
 using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 
@@ -10,21 +9,19 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     private readonly TenantDbContextBase _dbContext;
     private IDbContextTransaction _transaction;
     private readonly IPolicyRepository _policyRepository;
-    private readonly ILogger<UnitOfWork> _logger;
     private bool _disposed;
 
     public UnitOfWork(
         TenantDbContextBase dbContext, 
-        IPolicyRepository policyRepository,
-        ILogger<UnitOfWork> logger)
+        IPolicyRepository policyRepository)
     {
         _dbContext = dbContext;
         _policyRepository = policyRepository;
-        _logger = logger;
         _disposed = false;
     }
 
     public IPolicyRepository PolicyRepository => _policyRepository;
+
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -52,7 +49,6 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     {
         if (_transaction == null)
         {
-            _logger.LogWarning("RollbackTransactionAsync was called but no active transaction exists");
             return;
         }
 
@@ -89,6 +85,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
             {
                 await _transaction.DisposeAsync();
             }
+            
             await _dbContext.DisposeAsync();
             _disposed = true;
         }

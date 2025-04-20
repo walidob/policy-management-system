@@ -12,8 +12,8 @@ using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 namespace PolicyManagement.Infrastructure.Migrations.Tenant
 {
     [DbContext(typeof(TenantDbContextBase))]
-    [Migration("20250419213723_TenantDbInitialMigration1")]
-    partial class TenantDbInitialMigration1
+    [Migration("20250420200656_TenantDbInitialMigration")]
+    partial class TenantDbInitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -188,6 +188,11 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
 
                     b.Property<int>("PolicyTypeId")
                         .HasColumnType("int");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 

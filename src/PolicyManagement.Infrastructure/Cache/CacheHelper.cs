@@ -29,6 +29,15 @@ public class CacheHelper : ICacheHelper
         _cache.Set(key, value, cacheOptions);
         _cacheKeys.Add(key);
     }
+    
+    public void Set<T>(string key, T value, TimeSpan expiration)
+    {
+        var cacheOptions = new MemoryCacheEntryOptions()
+            .SetSlidingExpiration(expiration);
+            
+        _cache.Set(key, value, cacheOptions);
+        _cacheKeys.Add(key);
+    }
 
     public void InvalidateCache()
     {

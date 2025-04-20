@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PolicyManagement.Infrastructure.Migrations.Tenant
 {
     /// <inheritdoc />
-    public partial class TenantDbInitialMigration1 : Migration
+    public partial class TenantDbInitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -86,7 +86,8 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
                     EffectiveDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    PolicyTypeId = table.Column<int>(type: "int", nullable: false)
+                    PolicyTypeId = table.Column<int>(type: "int", nullable: false),
+                    TenantId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
                 },
                 constraints: table =>
                 {

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PolicyManagement.Infrastructure.Migrations.DefaultDb
 {
     /// <inheritdoc />
-    public partial class InitialMigration1 : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

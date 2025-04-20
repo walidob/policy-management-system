@@ -33,6 +33,10 @@ public class Policy
     
     public virtual PolicyTypeLookup PolicyType { get; set; }
 
+    [Required]
+    [MaxLength(100)]
+    public string TenantId { get; set; }
+
     // A policy can have multiple clients
     public virtual ICollection<ClientPolicy> ClientPolicies { get; set; } = [];
     

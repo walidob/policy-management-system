@@ -5,8 +5,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using PolicyManagement.Application.Contracts.Identity;
 using PolicyManagement.Domain.Entities.DefaultDb.Identity;
+using PolicyManagement.Domain.Enums;
 
-namespace PolicyManagement.Infrastructure.Services
+namespace PolicyManagement.Infrastructure.Services.Identity
 {
     public class JwtTokenService : IJwtTokenService
     {
@@ -33,6 +34,11 @@ namespace PolicyManagement.Infrastructure.Services
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
+                
+                if (role ==nameof(Role.TenantsSuperAdmin))
+                {
+                    claims.Add(new Claim("is_super_admin", "true"));
+                }
             }
 
             var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));

@@ -1,98 +1,107 @@
 using Microsoft.EntityFrameworkCore;
 using PolicyManagement.Application.Interfaces.Repositories;
 using PolicyManagement.Domain.Entities.TenantsDb;
-using PolicyManagement.Infrastructure.Cache;
 using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 
 namespace PolicyManagement.Infrastructure.Repositories;
 
 public class PolicyRepository : BaseRepository, IPolicyRepository
 {
-    private const string CacheKeyPrefix = "policy_";
-    private const string CacheKeyAllPolicies = "all_policies";
-    private const string CacheKeyPaginated = "policies_paginated_";
-
-    public PolicyRepository(TenantDbContextBase dbContext, ICacheHelper cacheHelper)
-        : base(dbContext, cacheHelper)
+    public PolicyRepository(TenantDbContextBase dbContext)
+        : base(dbContext)
     {
-    }
-
-    public async Task<Policy> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var cacheKey = $"{CacheKeyPrefix}{id}";
-        
-        if (CacheHelper.TryGetValue(cacheKey, out Policy policy))
-        {
-            return policy;
-        }
-        
-        policy = await DbContext.Policies
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
-            
-        if (policy != null)
-        {
-            CacheHelper.Set(cacheKey, policy);
-        }
-        
-        return policy;
-    }
-
-    public async Task<(List<Policy> Policies, int TotalCount)> GetAllPaginatedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
-    {
-        var cacheKey = $"{CacheKeyPaginated}{pageNumber}_{pageSize}";
-        
-        if (CacheHelper.TryGetValue(cacheKey, out (List<Policy>, int) result))
-        {
-            return result;
-        }
-        
-        var query = DbContext.Policies.AsNoTracking();
-        
-        var totalCount = await query.CountAsync(cancellationToken);
-        
-        var policies = await query
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        result = (policies, totalCount);
-        
-        CacheHelper.Set(cacheKey, result);
-        
-        return result;
     }
 
     public async Task<Policy> AddAsync(Policy policy, CancellationToken cancellationToken = default)
     {
         await DbContext.Policies.AddAsync(policy, cancellationToken);
-        
-        CacheHelper.InvalidateCache();
-        
         return policy;
     }
 
     public async Task<Policy> UpdateAsync(Policy policy, CancellationToken cancellationToken = default)
     {
         DbContext.Entry(policy).State = EntityState.Modified;
-        
-        CacheHelper.InvalidateCache();
-        CacheHelper.InvalidateSpecificCache($"{CacheKeyPrefix}{policy.Id}");
-        
         return policy;
     }
 
     public async Task<Policy> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var policy = await DbContext.Policies.FindAsync(new object[] { id }, cancellationToken);
+        var policy = await DbContext.Policies
+            .Where(p => p.Id == id)
+            .FirstOrDefaultAsync(cancellationToken);
+            
         if (policy != null)
         {
             DbContext.Policies.Remove(policy);
-            
-            CacheHelper.InvalidateCache();
-            CacheHelper.InvalidateSpecificCache($"{CacheKeyPrefix}{id}");
         }
 
         return policy;
+    }
+
+    public async Task<Policy> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await DbContext.Policies
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    }
+
+    public async Task<Policy> GetByIdAndTenantIdAsync(int id, string tenantId, CancellationToken cancellationToken = default)
+    {
+        return await DbContext.Policies
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == id && p.TenantId == tenantId, cancellationToken);
+    }
+
+    public async Task<(List<Policy> Policies, int TotalCount)> GetAllPoliciesAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var baseQuery = DbContext.Policies.AsNoTracking();
+        
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+        
+        var policies = await baseQuery
+            .OrderByDescending(p => p.CreationDate)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Include(p => p.PolicyType)
+            .ToListAsync(cancellationToken);
+
+        return (policies, totalCount);
+    }
+
+    public async Task<(List<Policy> Policies, int TotalCount)> GetPoliciesByClientIdAsync(int clientId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var baseQuery = DbContext.ClientPolicies
+            .AsNoTracking()
+            .Where(cp => cp.ClientId == clientId)
+          .Include(cp => cp.Policy.PolicyType)
+.Select(cp => cp.Policy);
+
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+        
+        var paginatedPolicies = await baseQuery
+            .OrderByDescending(p => p.CreationDate)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+        
+        return (paginatedPolicies, totalCount);
+    }
+
+    public async Task<(List<Policy> Policies, int TotalCount)> GetPoliciesByTenantIdAsync(string tenantId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var baseQuery = DbContext.Policies
+            .AsNoTracking()
+            .Where(p => p.TenantId == tenantId);
+            
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+        
+        var paginatedPolicies = await baseQuery
+            .OrderByDescending(p => p.CreationDate)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Include(p => p.PolicyType)
+            .ToListAsync(cancellationToken);
+        
+        return (paginatedPolicies, totalCount);
     }
 }

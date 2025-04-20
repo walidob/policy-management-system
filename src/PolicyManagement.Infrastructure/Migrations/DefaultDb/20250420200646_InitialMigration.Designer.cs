@@ -12,8 +12,8 @@ using PolicyManagement.Infrastructure.DbContexts.DefaultDb;
 namespace PolicyManagement.Infrastructure.Migrations.DefaultDb
 {
     [DbContext(typeof(DefaultDbContext))]
-    [Migration("20250419213705_InitialMigration1")]
-    partial class InitialMigration1
+    [Migration("20250420200646_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

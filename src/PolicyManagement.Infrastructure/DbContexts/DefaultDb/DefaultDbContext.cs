@@ -20,6 +20,6 @@ public class DefaultDbContext : IdentityDbContext<ApplicationUser, ApplicationRo
 
         //Below is commented because it was picking other contexts' entities
         //modelBuilder.ApplyConfigurationsFromAssembly(typeof(DefaultDbContext).Assembly);
-
+    
     }
 }

@@ -19,6 +19,8 @@ builder.Services.AddApplicationServices()
 
 builder.Services.AddControllers();
 builder.Services.AddMemoryCache(); 
+builder.Services.AddProblemDetails();
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddHealthChecks();
@@ -38,6 +40,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
 Log.Information("Application built.");
 
 await app.Services.SeedDefaultDbDataAsync();
@@ -46,25 +49,25 @@ await app.Services.SeedTenantsDbsDataAsync();
 
 Log.Information("Configuring middleware pipeline.");
 
-app.UseDefaultFiles();
-app.MapStaticAssets();
-app.UseHttpsRedirection();
-app.UseStatusCodePages();
+// Global exception handling middleware
+app.UseGlobalExceptionHandler();
 
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
 {
-    // In dev, we use Angular proxy so CORS isn't needed
-    app.UseDeveloperExceptionPage();
+    app.UseHsts();
+    app.UseCors("ProductionPolicy");
+}
+else
+{
     app.MapOpenApi();
     app.MapScalarApiReference();
     app.UseSerilogRequestLogging();
 }
-else
-{
-    app.UseHsts();
-    app.UseCors("ProductionPolicy");
-    app.UseMiddleware<ExceptionHandlingMiddleware>();
-}
+
+app.UseDefaultFiles();
+app.MapStaticAssets();
+app.UseHttpsRedirection();
+app.UseStatusCodePages();
 
 app.UseResponseCaching();
 app.UseAuthentication();
@@ -73,7 +76,6 @@ app.UseMultiTenant();
 
 app.MapControllers();
 
-// Map health check endpoint
 app.MapHealthChecks("/health");
 
 app.MapFallbackToFile("/index.html");
