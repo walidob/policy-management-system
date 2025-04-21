@@ -17,7 +17,8 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DisplayName = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -46,7 +47,8 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DisplayName = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -118,6 +120,12 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
                 {
                     table.PrimaryKey("PK_Claims", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Claims_ClaimStatuses_Status",
+                        column: x => x.Status,
+                        principalTable: "ClaimStatuses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_Claims_Clients_ClientId",
                         column: x => x.ClientId,
                         principalTable: "Clients",
@@ -167,6 +175,11 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
                 column: "PolicyId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Claims_Status",
+                table: "Claims",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ClientPolicies_ClientId",
                 table: "ClientPolicies",
                 column: "ClientId");
@@ -189,13 +202,13 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
                 name: "Claims");
 
             migrationBuilder.DropTable(
-                name: "ClaimStatuses");
-
-            migrationBuilder.DropTable(
                 name: "ClientPolicies");
 
             migrationBuilder.DropTable(
                 name: "TenantDetails");
+
+            migrationBuilder.DropTable(
+                name: "ClaimStatuses");
 
             migrationBuilder.DropTable(
                 name: "Clients");

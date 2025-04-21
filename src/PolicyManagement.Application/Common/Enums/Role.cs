@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PolicyManagement.Domain.Enums;
+namespace PolicyManagement.Application.Common.Enums;
 public enum Role
 {
     [Display(Name = "Super Administrator")]

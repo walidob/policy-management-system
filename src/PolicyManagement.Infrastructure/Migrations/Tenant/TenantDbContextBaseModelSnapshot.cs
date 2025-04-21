@@ -62,6 +62,8 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
 
                     b.HasIndex("PolicyId");
 
+                    b.HasIndex("Status");
+
                     b.ToTable("Claims");
                 });
 
@@ -119,13 +121,17 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
                     b.ToTable("ClientPolicies");
                 });
 
-            modelBuilder.Entity("PolicyManagement.Domain.Entities.TenantsDb.Lookup.ClaimStatusLookup", b =>
+            modelBuilder.Entity("PolicyManagement.Domain.Entities.TenantsDb.Lookups.ClaimStatusLookup", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -136,13 +142,17 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
                     b.ToTable("ClaimStatuses");
                 });
 
-            modelBuilder.Entity("PolicyManagement.Domain.Entities.TenantsDb.Lookup.PolicyTypeLookup", b =>
+            modelBuilder.Entity("PolicyManagement.Domain.Entities.TenantsDb.Lookups.PolicyTypeLookup", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -266,6 +276,14 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PolicyManagement.Domain.Entities.TenantsDb.Lookups.ClaimStatusLookup", "ClaimStatus")
+                        .WithMany()
+                        .HasForeignKey("Status")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClaimStatus");
+
                     b.Navigation("Client");
 
                     b.Navigation("Policy");
@@ -292,7 +310,7 @@ namespace PolicyManagement.Infrastructure.Migrations.Tenant
 
             modelBuilder.Entity("PolicyManagement.Domain.Entities.TenantsDb.Policy", b =>
                 {
-                    b.HasOne("PolicyManagement.Domain.Entities.TenantsDb.Lookup.PolicyTypeLookup", "PolicyType")
+                    b.HasOne("PolicyManagement.Domain.Entities.TenantsDb.Lookups.PolicyTypeLookup", "PolicyType")
                         .WithMany()
                         .HasForeignKey("PolicyTypeId")
                         .OnDelete(DeleteBehavior.Cascade)

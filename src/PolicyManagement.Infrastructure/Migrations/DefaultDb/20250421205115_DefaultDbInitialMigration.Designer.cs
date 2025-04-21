@@ -12,8 +12,8 @@ using PolicyManagement.Infrastructure.DbContexts.DefaultDb;
 namespace PolicyManagement.Infrastructure.Migrations.DefaultDb
 {
     [DbContext(typeof(DefaultDbContext))]
-    [Migration("20250420200646_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20250421205115_DefaultDbInitialMigration")]
+    partial class DefaultDbInitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -168,6 +168,10 @@ namespace PolicyManagement.Infrastructure.Migrations.DefaultDb
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")

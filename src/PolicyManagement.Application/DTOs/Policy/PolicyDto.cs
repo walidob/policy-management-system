@@ -1,26 +1,16 @@
+using PolicyManagement.Application.DTOs.Claim;
+
 namespace PolicyManagement.Application.DTOs.Policy;
 
-public class PolicyDto
+public class PolicyDto : PolicyDtoBase
 {
     public int Id { get; set; }
 
-    public string Name { get; set; }
-
-    public string Description { get; set; }
-
     public DateTime CreationDate { get; set; }
-
-    public DateTime EffectiveDate { get; set; }
-
-    public DateTime ExpiryDate { get; set; }
 
     public bool IsActive { get; set; }
 
-    public int PolicyTypeId { get; set; }
-
     public string PolicyTypeName { get; set; }
-
-    public string? TenantId { get; set; }
     
     public string? TenantName { get; set; }
     

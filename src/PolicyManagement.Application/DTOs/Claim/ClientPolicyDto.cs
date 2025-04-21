@@ -1,4 +1,4 @@
-namespace PolicyManagement.Application.DTOs.Policy;
+namespace PolicyManagement.Application.DTOs.Claim;
 
 public class ClientPolicyDto
 {

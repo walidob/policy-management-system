@@ -164,22 +164,451 @@ public class PolicyControllerTests
     {
         // Arrange
         var policyId = 1;
-        var deletedPolicy = new PolicyDto 
-        { 
-            Id = policyId, 
-            Name = "Deleted Policy", 
-            TenantId = "tenant1" 
+        var tenantId = "tenant1";
+        
+        var deleteDto = new DeletePolicyDto
+        {
+            Id = policyId,
+            TenantId = tenantId
         };
 
-        _mockPolicyService
-            .Setup(s => s.DeletePolicyAsync(policyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(deletedPolicy);
+        _mockMultipleTenantPolicyService
+            .Setup(s => s.DeletePolicyAsync(It.Is<DeletePolicyDto>(dto => 
+                dto.Id == policyId && dto.TenantId == tenantId), 
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Set up claims for SuperAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, nameof(Role.TenantsSuperAdmin))
+        };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var user = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
 
         // Act
-        var result = await _controller.DeletePolicy(policyId);
+        var result = await _controller.DeletePolicy(policyId, deleteDto);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-        okResult.Value.Should().BeEquivalentTo(deletedPolicy);
+        okResult.Value.Should().BeEquivalentTo(true);
+    }
+
+    [Fact]
+    public async Task UpdatePolicy_WithValidData_ReturnsUpdatedPolicy()
+    {
+        // Arrange
+        var policyId = 1;
+        var updatePolicyDto = new UpdatePolicyDto
+        {
+            Name = "Updated Policy",
+            Description = "Updated description"
+        };
+
+        var updatedPolicy = new PolicyDto
+        {
+            Id = policyId,
+            Name = "Updated Policy",
+            Description = "Updated description",
+            TenantId = "tenant1"
+        };
+
+        _mockPolicyService
+            .Setup(s => s.UpdatePolicyAsync(policyId, updatePolicyDto, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedPolicy);
+
+        // Act
+        var result = await _controller.UpdatePolicy(policyId, updatePolicyDto);
+
+        // Assert
+        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+        okResult.Value.Should().BeEquivalentTo(updatedPolicy);
+    }
+
+    [Fact]
+    public async Task UpdatePolicy_WithInvalidId_ReturnsNotFound()
+    {
+        // Arrange
+        var policyId = 999;
+        var updatePolicyDto = new UpdatePolicyDto
+        {
+            Name = "Updated Policy",
+            Description = "Updated description"
+        };
+
+        _mockPolicyService
+            .Setup(s => s.UpdatePolicyAsync(policyId, updatePolicyDto, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new KeyNotFoundException($"Policy with ID {policyId} not found"));
+
+        // Act
+        var result = await _controller.UpdatePolicy(policyId, updatePolicyDto);
+
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task UpdatePolicy_AsTenantAdmin_ForOtherTenant_ReturnsForbid()
+    {
+        // Arrange
+        var policyId = 1;
+        var updatePolicyDto = new UpdatePolicyDto
+        {
+            Name = "Updated Policy",
+            Description = "Updated description"
+        };
+
+        var policy = new PolicyDto
+        {
+            Id = policyId,
+            Name = "Original Policy",
+            Description = "Original description",
+            TenantId = "other-tenant"
+        };
+
+        _mockPolicyService
+            .Setup(s => s.GetPolicyByClientIdAsync(policyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(policy);
+
+        // Set up claims for TenantAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, nameof(Role.TenantAdmin)),
+            new Claim("apptenid", "tenant1")
+        };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var user = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
+
+        // Act
+        var result = await _controller.UpdatePolicy(policyId, updatePolicyDto);
+
+        // Assert
+        result.Should().BeOfType<ForbidResult>();
+    }
+
+    [Fact]
+    public async Task GetPolicyById_AsClient_ReturnsPolicy()
+    {
+        // Arrange
+        var policyId = 1;
+        var clientId = 1;
+
+        var policy = new PolicyDto
+        {
+            Id = policyId,
+            Name = "Client Policy",
+            Description = "Policy for client",
+            TenantId = "tenant1"
+        };
+
+        _mockPolicyService
+            .Setup(s => s.GetPolicyByClientIdAsync(policyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(policy);
+
+        // Set up claims for Client role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, nameof(Role.Client)),
+            new Claim(ClaimTypes.NameIdentifier, clientId.ToString())
+        };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var user = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
+
+        // Act
+        var result = await _controller.GetPolicyById(policyId, null);
+
+        // Assert
+        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+        okResult.Value.Should().BeEquivalentTo(policy);
+    }
+
+    [Fact]
+    public async Task GetPoliciesBasedOnUserRole_AsTenantAdmin_ReturnsTenantPolicies()
+    {
+        // Arrange
+        var pageNumber = 1;
+        var pageSize = 10;
+        var tenantId = "tenant1";
+        var policyResponseDto = new PolicyResponseDto
+        {
+            Policies = new List<PolicyDto>
+            {
+                new PolicyDto { Id = 1, Name = "Policy 1", TenantId = tenantId },
+                new PolicyDto { Id = 2, Name = "Policy 2", TenantId = tenantId }
+            },
+            TotalCount = 2,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        _mockPolicyService
+            .Setup(s => s.GetPoliciesByTenantIdAsync(tenantId, pageNumber, pageSize, "id", "asc", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(policyResponseDto);
+
+        // Set up claims for TenantAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, nameof(Role.TenantAdmin)),
+            new Claim("apptenid", tenantId)
+        };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var user = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
+
+        // Act
+        var result = await _controller.GetPoliciesBasedOnUserRole(pageNumber, pageSize, "id", "asc");
+
+        // Assert
+        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+        okResult.Value.Should().BeEquivalentTo(policyResponseDto);
+    }
+
+    [Fact]
+    public async Task GetPoliciesBasedOnUserRole_AsClient_ReturnsClientPolicies()
+    {
+        // Arrange
+        var pageNumber = 1;
+        var pageSize = 10;
+        var clientId = 1;
+        var policyResponseDto = new PolicyResponseDto
+        {
+            Policies = new List<PolicyDto>
+            {
+                new PolicyDto { Id = 1, Name = "Policy 1", ClientId = clientId },
+                new PolicyDto { Id = 2, Name = "Policy 2", ClientId = clientId }
+            },
+            TotalCount = 2,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        _mockPolicyService
+            .Setup(s => s.GetPoliciesByClientIdAsync(clientId, pageNumber, pageSize, "id", "asc", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(policyResponseDto);
+
+        // Set up claims for Client role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, nameof(Role.Client)),
+            new Claim(ClaimTypes.NameIdentifier, clientId.ToString())
+        };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var user = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
+
+        // Act
+        var result = await _controller.GetPoliciesBasedOnUserRole(pageNumber, pageSize, "id", "asc");
+
+        // Assert
+        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+        okResult.Value.Should().BeEquivalentTo(policyResponseDto);
+    }
+
+    [Fact]
+    public async Task GetLatestPolicies_AsSuperAdmin_ReturnsLatestPolicies()
+    {
+        // Arrange
+        var policies = new List<PolicyDto>
+        {
+            new PolicyDto { Id = 1, Name = "Policy 1", TenantId = "tenant1" },
+            new PolicyDto { Id = 2, Name = "Policy 2", TenantId = "tenant2" },
+            new PolicyDto { Id = 3, Name = "Policy 3", TenantId = "tenant3" }
+        };
+
+        var policyResponseDto = new PolicyResponseDto
+        {
+            Policies = policies,
+            TotalCount = 3,
+            PageNumber = 1,
+            PageSize = 3
+        };
+
+        _mockMultipleTenantPolicyService
+            .Setup(s => s.GetPoliciesAcrossTenantsAsync(1, 3, "creationdate", "desc", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(policyResponseDto);
+
+        // Set up claims for SuperAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, nameof(Role.TenantsSuperAdmin))
+        };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var user = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
+
+        // Act
+        var result = await _controller.GetLatestPolicies();
+
+        // Assert
+        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+        okResult.Value.Should().BeEquivalentTo(policies);
+    }
+
+    [Fact]
+    public async Task GetLatestPolicies_AsTenantAdmin_ReturnsLatestPoliciesForTenant()
+    {
+        // Arrange
+        var tenantId = "tenant1";
+        var policies = new List<PolicyDto>
+        {
+            new PolicyDto { Id = 1, Name = "Policy 1", TenantId = tenantId },
+            new PolicyDto { Id = 2, Name = "Policy 2", TenantId = tenantId },
+            new PolicyDto { Id = 3, Name = "Policy 3", TenantId = tenantId }
+        };
+
+        var policyResponseDto = new PolicyResponseDto
+        {
+            Policies = policies,
+            TotalCount = 3,
+            PageNumber = 1,
+            PageSize = 3
+        };
+
+        _mockPolicyService
+            .Setup(s => s.GetPoliciesByTenantIdAsync(tenantId, 1, 3, "creationdate", "desc", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(policyResponseDto);
+
+        // Set up claims for TenantAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, nameof(Role.TenantAdmin)),
+            new Claim("apptenid", tenantId)
+        };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var user = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
+
+        // Act
+        var result = await _controller.GetLatestPolicies();
+
+        // Assert
+        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+        okResult.Value.Should().BeEquivalentTo(policies);
+    }
+
+    [Fact]
+    public async Task GetLatestPolicies_AsClient_ReturnsLatestPoliciesForClient()
+    {
+        // Arrange
+        var clientId = 1;
+        var policies = new List<PolicyDto>
+        {
+            new PolicyDto { Id = 1, Name = "Policy 1", ClientId = clientId },
+            new PolicyDto { Id = 2, Name = "Policy 2", ClientId = clientId },
+            new PolicyDto { Id = 3, Name = "Policy 3", ClientId = clientId }
+        };
+
+        var policyResponseDto = new PolicyResponseDto
+        {
+            Policies = policies,
+            TotalCount = 3,
+            PageNumber = 1,
+            PageSize = 3
+        };
+
+        _mockPolicyService
+            .Setup(s => s.GetPoliciesByClientIdAsync(clientId, 1, 3, "creationdate", "desc", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(policyResponseDto);
+
+        // Set up claims for Client role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, nameof(Role.Client)),
+            new Claim(ClaimTypes.NameIdentifier, clientId.ToString())
+        };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var user = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
+
+        // Act
+        var result = await _controller.GetLatestPolicies();
+
+        // Assert
+        var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+        okResult.Value.Should().BeEquivalentTo(policies);
+    }
+
+    [Fact]
+    public async Task GetLatestPolicies_WithNoUser_ReturnsBadRequest()
+    {
+        // Arrange
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = null }
+        };
+
+        // Act
+        var result = await _controller.GetLatestPolicies();
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetPoliciesBasedOnUserRole_WithInvalidSortParameters_ReturnsBadRequest()
+    {
+        // Arrange
+        var pageNumber = 1;
+        var pageSize = 10;
+        var clientId = 1;
+
+        _mockPolicyService
+            .Setup(s => s.GetPoliciesByClientIdAsync(clientId, pageNumber, pageSize, "invalidColumn", "asc", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ArgumentException("Invalid sort column: invalidColumn"));
+
+        // Set up claims for Client role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, nameof(Role.Client)),
+            new Claim(ClaimTypes.NameIdentifier, clientId.ToString())
+        };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var user = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
+
+        // Act
+        var result = await _controller.GetPoliciesBasedOnUserRole(pageNumber, pageSize, "invalidColumn", "asc");
+
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
     }
 } 
