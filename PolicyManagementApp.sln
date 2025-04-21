@@ -1,5 +1,4 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -18,6 +17,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{31C9CF4A-2379-49E5-A06E-D0CEEB148E5E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyManagementApp.Api.UnitTests", "tests\PolicyManagementApp.Api.UnitTests\PolicyManagementApp.Api.UnitTests.csproj", "{ED2483BC-981E-B5CE-F945-83D8F0C6566C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyManagement.Infrastructure.UnitTests", "tests\PolicyManagement.Infrastructure.UnitTests\PolicyManagement.Infrastructure.UnitTests.csproj", "{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}"
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "policymanagementapp.client", "frontend\policymanagementapp.client\policymanagementapp.client.esproj", "{C70F5733-DE19-43D4-72B3-261AD18C79E9}"
 EndProject
@@ -91,6 +92,18 @@ Global
 		{ED2483BC-981E-B5CE-F945-83D8F0C6566C}.Release|x64.Build.0 = Release|Any CPU
 		{ED2483BC-981E-B5CE-F945-83D8F0C6566C}.Release|x86.ActiveCfg = Release|Any CPU
 		{ED2483BC-981E-B5CE-F945-83D8F0C6566C}.Release|x86.Build.0 = Release|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Debug|x64.Build.0 = Debug|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Debug|x86.Build.0 = Debug|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Release|x64.ActiveCfg = Release|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Release|x64.Build.0 = Release|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Release|x86.ActiveCfg = Release|Any CPU
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9}.Release|x86.Build.0 = Release|Any CPU
 		{C70F5733-DE19-43D4-72B3-261AD18C79E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C70F5733-DE19-43D4-72B3-261AD18C79E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C70F5733-DE19-43D4-72B3-261AD18C79E9}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
@@ -119,6 +132,7 @@ Global
 		{DD9D4005-18F8-6830-BE45-1ECDC320D2A3} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{D8C39ABF-54DD-9993-0A97-38380BE682ED} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{ED2483BC-981E-B5CE-F945-83D8F0C6566C} = {31C9CF4A-2379-49E5-A06E-D0CEEB148E5E}
+		{FE4E82BB-2D3F-4A85-9862-4B8E0A3AFDE9} = {31C9CF4A-2379-49E5-A06E-D0CEEB148E5E}
 		{C70F5733-DE19-43D4-72B3-261AD18C79E9} = {A010F94B-4244-4AC1-BFAD-D4D7B7564E68}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

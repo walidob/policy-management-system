@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using PolicyManagement.Application.Interfaces.Repositories;
 using PolicyManagement.Domain.Entities.TenantsDb;
 using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
-using PolicyManagement.Infrastructure.Cache;
 
 namespace PolicyManagement.Infrastructure.Repositories;
 

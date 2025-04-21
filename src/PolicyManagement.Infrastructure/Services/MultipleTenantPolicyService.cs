@@ -90,7 +90,7 @@ public class MultipleTenantPolicyService : IMultipleTenantPolicyService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting policies from tenant {TenantId}", tenant.Id);
+            _logger.LogError(ex, "Error getting policies from tenant {TenantId}", tenantId);
             throw;
         }
     }
