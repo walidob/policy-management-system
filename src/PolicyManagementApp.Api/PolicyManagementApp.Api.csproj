@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <SpaRoot>..\policymanagementapp.client</SpaRoot>
+    <SpaRoot>..\..\frontend\policymanagementapp.client</SpaRoot>
     <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
     <SpaProxyServerUrl>https://localhost:52619</SpaProxyServerUrl>
   </PropertyGroup>
@@ -40,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\policymanagementapp.client\policymanagementapp.client.esproj">
+    <ProjectReference Include="..\..\frontend\policymanagementapp.client\policymanagementapp.client.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\PolicyManagement.Application\PolicyManagement.Application.csproj" />

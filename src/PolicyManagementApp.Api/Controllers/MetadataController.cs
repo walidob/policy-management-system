@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Microsoft.Net.Http.Headers;
 using PolicyManagement.Application.Common.Enums;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace PolicyManagementApp.Api.Controllers;
 
@@ -14,7 +15,7 @@ public class MetadataController : ControllerBase //For lookups - We are using en
     private const int CacheDurationInSeconds = 3600;
 
     [HttpGet("enums/{enumType}")]
-    [ResponseCache(Duration = CacheDurationInSeconds, VaryByQueryKeys = new[] { "enumType" })]
+    [OutputCache(Duration = CacheDurationInSeconds, VaryByQueryKeys = new[] { "enumType" })]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(string))]
     public IActionResult GetEnumValues(string enumType)
@@ -58,7 +59,7 @@ public class MetadataController : ControllerBase //For lookups - We are using en
     }
 
     [HttpGet("enums")]
-    [ResponseCache(Duration = CacheDurationInSeconds)]
+    [OutputCache(Duration = CacheDurationInSeconds)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetAllEnums()
     {
