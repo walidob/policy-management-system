@@ -9,6 +9,6 @@ public interface IPolicyService
     Task<PolicyDto> CreatePolicyAsync(CreatePolicyDto createPolicyDto, CancellationToken cancellationToken = default);
     Task<PolicyDto> UpdatePolicyAsync(int policyId, UpdatePolicyDto updatePolicyDto, CancellationToken cancellationToken = default);
     Task<PolicyDto> DeletePolicyAsync(int policyId, CancellationToken cancellationToken = default);
-    Task<PolicyResponseDto> GetPoliciesByTenantIdAsync(string tenantId, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
-    Task<PolicyResponseDto> GetPoliciesByClientIdAsync(int clientId, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+    Task<PolicyResponseDto> GetPoliciesByTenantIdAsync(string tenantId, int pageNumber, int pageSize, string sortColumn = "id", string sortDirection = "asc", CancellationToken cancellationToken = default);
+    Task<PolicyResponseDto> GetPoliciesByClientIdAsync(int clientId, int pageNumber, int pageSize, string sortColumn = "id", string sortDirection = "asc", CancellationToken cancellationToken = default);
 }

@@ -1,7 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace PolicyManagement.Domain.Enums;
 public enum Role
 {
+    [Display(Name = "Super Administrator")]
     TenantsSuperAdmin,
-    TenantAdmin, // Can see data within their tenant
-    TenantClient  // Can only see their own data
+    
+    [Display(Name = "Tenant Administrator")]
+    TenantAdmin, 
+    
+    [Display(Name = "Client")]
+    TenantClient
 }
