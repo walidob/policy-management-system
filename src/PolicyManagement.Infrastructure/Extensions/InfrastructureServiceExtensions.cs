@@ -16,8 +16,9 @@ using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts.Initialization;
 using PolicyManagement.Infrastructure.Repositories;
 using PolicyManagement.Infrastructure.Services;
-using PolicyManagement.Infrastructure.Services.Identity;
 using System.Text;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Builder;
 
 namespace PolicyManagement.Infrastructure.Extensions;
 
@@ -51,14 +52,18 @@ public static class InfrastructureServiceExtensions
     {
         services.AddSingleton<ICacheHelper, CacheHelper>();
         
-        services.AddScoped<IPolicyRepository, PolicyRepository>();
-        
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         
         services.AddScoped<IPolicyService, PolicyService>();
+        services.AddScoped<IMultipleTenantPolicyService, MultipleTenantPolicyService>();
+        services.AddScoped<ITenantInformationService, TenantInformationService>();
+      
         services.AddScoped<TenantMigrationService>();
         services.AddScoped<TenantDataSeeder>();
-        services.AddScoped<IMultipleTenantPolicyService, MultipleTenantPolicyService>();
+
+
+        services.AddScoped<IPolicyRepository, PolicyRepository>();
+        services.AddScoped<IMultipleTenantPolicyRepository, MultipleTenantPolicyRepository>();
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
@@ -88,6 +93,25 @@ public static class InfrastructureServiceExtensions
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
                 ClockSkew = TimeSpan.Zero
             };
+            
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    context.Token = context.Request.Cookies["X-Access-Token"];
+                    return Task.CompletedTask;
+                }
+            };
+            
+            options.RequireHttpsMetadata = !configuration.GetValue<bool>("Development:IsLocal", false);
+            options.SaveToken = false; 
+        });
+        
+        services.Configure<CookiePolicyOptions>(options =>
+        {
+            options.MinimumSameSitePolicy = SameSiteMode.Strict;
+            options.HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always;
+            options.Secure = CookieSecurePolicy.Always;
         });
     }
     

@@ -2,7 +2,7 @@ using Finbuckle.MultiTenant.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using PolicyManagement.Domain.Entities.DefaultDb;
 using PolicyManagement.Domain.Entities.TenantsDb;
-using PolicyManagement.Domain.Entities.TenantsDb.Lookup;
+using PolicyManagement.Domain.Entities.TenantsDb.Lookups;
 
 namespace PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 

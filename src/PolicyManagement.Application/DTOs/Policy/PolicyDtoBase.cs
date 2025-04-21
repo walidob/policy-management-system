@@ -19,6 +19,8 @@ public abstract class PolicyDtoBase
 
     [Required]
     public int PolicyTypeId { get; set; }
-    
+
+    public bool IsActive { get; set; } = true;
+
     public string TenantId { get; set; }
 } 

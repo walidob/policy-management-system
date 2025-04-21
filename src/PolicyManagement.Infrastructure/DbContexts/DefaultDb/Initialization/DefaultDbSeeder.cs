@@ -1,13 +1,14 @@
-//Generated using AI
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using PolicyManagement.Application.Common.Enums;
 using PolicyManagement.Domain.Entities.DefaultDb;
 using PolicyManagement.Domain.Entities.DefaultDb.Identity;
-using PolicyManagement.Domain.Enums;
 using PolicyManagement.Infrastructure.Models;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 namespace PolicyManagement.Infrastructure.DbContexts.DefaultDb.Initialization;
 
@@ -98,16 +99,23 @@ public static class DefaultDbSeeder
     {
         logger.LogInformation("Checking and creating default roles if necessary");
         
-        foreach (var roleName in Enum.GetNames<Role>())
+        foreach (var roleEnum in Enum.GetValues<Role>())
         {
+            string roleName = roleEnum.ToString();
+            
+            // Get display name from DisplayAttribute
+            var displayName = GetDisplayName(roleEnum);
+            
             // Check if role exists
             var roleExists = await roleManager.RoleExistsAsync(roleName);
             if (!roleExists)
             {
-                logger.LogInformation("Creating role: {RoleName}", roleName);
+                logger.LogInformation("Creating role: {RoleName} with display name: {DisplayName}", roleName, displayName);
                 var role = new ApplicationRole(roleName)
                 {
-                    NormalizedName = roleName.ToUpper()
+                    NormalizedName = roleName.ToUpper(),
+                    Name = roleName,
+                    DisplayName = displayName
                 };
                 
                 var result = await roleManager.CreateAsync(role);
@@ -117,7 +125,33 @@ public static class DefaultDbSeeder
                         roleName, string.Join(", ", result.Errors.Select(e => e.Description)));
                 }
             }
+            else
+            {
+                // Update display name for existing role
+                var existingRole = await roleManager.FindByNameAsync(roleName);
+                if (existingRole != null && existingRole.DisplayName != displayName)
+                {
+                    existingRole.DisplayName = displayName;
+                    await roleManager.UpdateAsync(existingRole);
+                    logger.LogInformation("Updated display name for role {RoleName} to {DisplayName}", roleName, displayName);
+                }
+            }
         }
+    }
+
+    private static string GetDisplayName(Role role)
+    {
+        var memberInfo = typeof(Role).GetMember(role.ToString()).FirstOrDefault();
+        if (memberInfo != null)
+        {
+            var displayAttribute = memberInfo.GetCustomAttribute<DisplayAttribute>();
+            if (displayAttribute != null)
+            {
+                return displayAttribute.Name;
+            }
+        }
+        
+        return role.ToString();
     }
 
     private static async Task SeedUser(

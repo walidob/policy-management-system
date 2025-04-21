@@ -1,5 +1,6 @@
 //Generated using AI. 
 using AutoMapper;
+using PolicyManagement.Application.DTOs.Claim;
 using PolicyManagement.Application.DTOs.Policy;
 using PolicyManagement.Domain.Entities.TenantsDb;
 
@@ -11,7 +12,15 @@ public class MappingProfile : Profile
     {
         CreateMap<Policy, PolicyDto>()
             .ForMember(dest => dest.PolicyTypeName, opt => opt.MapFrom(src => 
-                src.PolicyType != null ? src.PolicyType.Name : string.Empty));
+                src.PolicyType != null ? src.PolicyType.Name : string.Empty))
+            .ForMember(dest => dest.Claims, opt => opt.MapFrom(src => src.Claims))
+            .ForMember(dest => dest.ClientPolicies, opt => opt.MapFrom(src => src.ClientPolicies))
+            .ForMember(dest => dest.TenantId, opt => opt.MapFrom(src => src.TenantId))
+            .ForMember(dest => dest.TenantName, opt => opt.Ignore());
+
+        CreateMap<(Policy Policy, string TenantId, string TenantName), PolicyDto>()
+            .IncludeMembers(src => src.Policy)
+            .ForMember(dest => dest.TenantName, opt => opt.MapFrom(src => src.TenantName));
             
         CreateMap<CreatePolicyDto, Policy>()
             .ForMember(dest => dest.CreationDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
@@ -38,6 +47,7 @@ public class MappingProfile : Profile
                 
         CreateMap<Client, ClientDto>();
         
-        CreateMap<ClientPolicy, ClientPolicyDto>();
+        CreateMap<ClientPolicy, ClientPolicyDto>()
+            .ForMember(dest => dest.Client, opt => opt.MapFrom(src => src.Client));
     }
 } 

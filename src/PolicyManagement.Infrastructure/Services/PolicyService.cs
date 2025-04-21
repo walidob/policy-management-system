@@ -5,8 +5,6 @@ using PolicyManagement.Application.Interfaces.Repositories;
 using PolicyManagement.Application.Interfaces.Services;
 using PolicyManagement.Domain.Entities.TenantsDb;
 using PolicyManagement.Infrastructure.Cache;
-using PolicyManagement.Infrastructure.DbContexts.DefaultDb;
-using Microsoft.EntityFrameworkCore;
 
 namespace PolicyManagement.Infrastructure.Services;
 
@@ -16,29 +14,22 @@ public class PolicyService : IPolicyService
     private readonly ILogger<PolicyService> _logger;
     private readonly IMapper _mapper;
     private readonly ICacheHelper _cacheHelper;
-    private readonly DefaultDbContext _defaultDbContext;
-    
-    // Cache key constants
-    private const string CacheKeyPolicy = "policy_";
-    private const string CacheKeyPolicyTenant = "policy_tenant_";
-    private const string CacheKeyPolicyClient = "policy_client_";
-    private const string CacheKeyTenantPolicies = "tenant_policies_";
-    private const string CacheKeyClientPolicies = "client_policies_";
+    private readonly ITenantInformationService _tenantService;
 
     public PolicyService(
         IUnitOfWork unitOfWork, 
         ILogger<PolicyService> logger, 
         IMapper mapper,
         ICacheHelper cacheHelper,
-        DefaultDbContext defaultDbContext)
+        ITenantInformationService tenantService)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _mapper = mapper;
         _cacheHelper = cacheHelper;
-        _defaultDbContext = defaultDbContext;
+        _tenantService = tenantService;
     }
-   
+
     public async Task<PolicyDto> CreatePolicyAsync(CreatePolicyDto createPolicyDto, CancellationToken cancellationToken = default)
     {
         try
@@ -50,9 +41,8 @@ public class PolicyService : IPolicyService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            _cacheHelper.InvalidateSpecificCache($"{CacheKeyTenantPolicies}{policy.TenantId}");
-            _cacheHelper.InvalidateSpecificCache($"{CacheKeyPolicyTenant}{policy.TenantId}");
-
+            await _cacheHelper.EvictByTagAsync(CacheConstants.PoliciesTag, cancellationToken);
+      
             return _mapper.Map<PolicyDto>(policy);
         }
         catch (Exception ex)
@@ -88,9 +78,7 @@ public class PolicyService : IPolicyService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
             
-            _cacheHelper.InvalidateSpecificCache($"{CacheKeyTenantPolicies}{policy.TenantId}");
-            _cacheHelper.InvalidateSpecificCache($"{CacheKeyPolicyTenant}{policy.TenantId}");
-            _cacheHelper.InvalidateSpecificCache($"{CacheKeyPolicy}{id}");
+            await _cacheHelper.EvictByTagAsync(CacheConstants.PoliciesTag, cancellationToken);
 
             return _mapper.Map<PolicyDto>(policy);
         }
@@ -112,16 +100,15 @@ public class PolicyService : IPolicyService
 
             var policy = await _unitOfWork.PolicyRepository.DeleteAsync(id, cancellationToken);
             
-            if (policy != null)
+            if (policy == null)
             {
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-                
-                _cacheHelper.InvalidateSpecificCache($"{CacheKeyTenantPolicies}{policy.TenantId}");
-                _cacheHelper.InvalidateSpecificCache($"{CacheKeyPolicyTenant}{policy.TenantId}");
-                _cacheHelper.InvalidateSpecificCache($"{CacheKeyPolicy}{id}");
+                throw new KeyNotFoundException($"Policy with ID {id} not found");
             }
             
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
+            
+            await _cacheHelper.EvictByTagAsync(CacheConstants.PoliciesTag, cancellationToken);
 
             return _mapper.Map<PolicyDto>(policy);
         }
@@ -137,7 +124,7 @@ public class PolicyService : IPolicyService
 
     public async Task<PolicyDto> GetPolicyByClientIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var cacheKey = $"{CacheKeyPolicyClient}{id}";
+        var cacheKey = CacheConstants.GetPolicyByIdCacheKey(id, "client");
         
         if (_cacheHelper.TryGetValue(cacheKey, out PolicyDto policyDto))
         {
@@ -149,53 +136,31 @@ public class PolicyService : IPolicyService
         
         if (policyDto != null)
         {
-            _cacheHelper.Set(cacheKey, policyDto, TimeSpan.FromMinutes(10));
-        }
-        
-        return policyDto;
-    }
-
-    public async Task<PolicyDto> GetPolicyByIdAsync(int id, string tenantId, CancellationToken cancellationToken = default)
-    {
-        var cacheKey = $"{CacheKeyPolicyTenant}{id}_{tenantId}";
-        
-        if (_cacheHelper.TryGetValue(cacheKey, out PolicyDto policyDto))
-        {
-            return policyDto;
-        }
-        
-        var policy = await _unitOfWork.PolicyRepository.GetByIdAndTenantIdAsync(id, tenantId, cancellationToken);
-        policyDto = _mapper.Map<PolicyDto>(policy);
-        
-        if (policyDto != null)
-        {
-            _cacheHelper.Set(cacheKey, policyDto, TimeSpan.FromMinutes(10));
+            _cacheHelper.Set(cacheKey, policyDto, CacheConstants.PolicyCacheDuration);
         }
         
         return policyDto;
     }
    
-    public async Task<PolicyResponseDto> GetPoliciesByTenantIdAsync(string tenantId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PolicyResponseDto> GetPoliciesByTenantIdAsync(string tenantId, int pageNumber, int pageSize, string sortColumn = "id", string sortDirection = "asc", CancellationToken cancellationToken = default)
     {
         try
         {
-            string cacheKey = $"{CacheKeyTenantPolicies}{tenantId}_{pageNumber}_{pageSize}";
+            string cacheKey = CacheConstants.GetPoliciesByTenantCacheKey(tenantId, pageNumber, pageSize, sortColumn, sortDirection);
 
             if (_cacheHelper.TryGetValue(cacheKey, out PolicyResponseDto cachedResponse))
             {
                 return cachedResponse;
             }
             
-            var tenant = await _defaultDbContext.Tenants.Where(t => t.Id == tenantId)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(cancellationToken);
+            var tenant = await _tenantService.GetTenantByIdAsync(tenantId, cancellationToken);
 
             if (tenant == null)
             {
                 throw new KeyNotFoundException($"Tenant with ID {tenantId} not found");
             }
             
-            var (policies, totalCount) = await _unitOfWork.PolicyRepository.GetPoliciesByTenantIdAsync(tenantId, pageNumber, pageSize, cancellationToken);
+            var (policies, totalCount) = await _unitOfWork.PolicyRepository.GetPoliciesByTenantIdAsync(tenantId, pageNumber, pageSize, sortColumn, sortDirection, cancellationToken);
             
             // Map to DTOs
             var policyDtos = _mapper.Map<List<PolicyDto>>(policies);
@@ -203,7 +168,7 @@ public class PolicyService : IPolicyService
             // Add tenant information to the policies
             foreach (var policy in policyDtos)
             {
-                policy.TenantId = tenant.Id;
+                // TenantId is already mapped automatically from the Policy entity
                 policy.TenantName = tenant.Name;
             }
 
@@ -217,7 +182,7 @@ public class PolicyService : IPolicyService
                 TenantName = tenant.Name
             };
 
-            _cacheHelper.Set(cacheKey, response, TimeSpan.FromMinutes(5));
+            _cacheHelper.Set(cacheKey, response, CacheConstants.PolicyCacheDuration);
             return response;
         }
         catch (Exception ex)
@@ -227,18 +192,18 @@ public class PolicyService : IPolicyService
         }
     }
 
-    public async Task<PolicyResponseDto> GetPoliciesByClientIdAsync(int clientId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PolicyResponseDto> GetPoliciesByClientIdAsync(int clientId, int pageNumber, int pageSize, string sortColumn = "id", string sortDirection = "asc", CancellationToken cancellationToken = default)
     {
         try
         {
-            string cacheKey = $"{CacheKeyClientPolicies}{clientId}_{pageNumber}_{pageSize}";
+            string cacheKey = CacheConstants.GetPoliciesByClientCacheKey(clientId, pageNumber, pageSize, sortColumn, sortDirection);
 
             if (_cacheHelper.TryGetValue(cacheKey, out PolicyResponseDto cachedResponse))
             {
                 return cachedResponse;
             }
             
-            var (policies, totalCount) = await _unitOfWork.PolicyRepository.GetPoliciesByClientIdAsync(clientId, pageNumber, pageSize, cancellationToken);
+            var (policies, totalCount) = await _unitOfWork.PolicyRepository.GetPoliciesByClientIdAsync(clientId, pageNumber, pageSize, sortColumn, sortDirection, cancellationToken);
             
             // Map to DTOs
             var policyDtos = _mapper.Map<List<PolicyDto>>(policies);
@@ -251,7 +216,7 @@ public class PolicyService : IPolicyService
                 PageSize = pageSize
             };
             
-            _cacheHelper.Set(cacheKey, response, TimeSpan.FromMinutes(5));
+            _cacheHelper.Set(cacheKey, response, CacheConstants.PolicyCacheDuration);
             return response;
         }
         catch (Exception ex)

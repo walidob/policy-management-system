@@ -21,8 +21,4 @@
     <ProjectReference Include="..\PolicyManagement.Domain\PolicyManagement.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Interfaces\Services\" />
-  </ItemGroup>
-
 </Project>
