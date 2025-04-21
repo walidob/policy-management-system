@@ -2,34 +2,40 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PolicyManagement.Application.DTOs.Policy;
 using PolicyManagement.Application.Interfaces.Services;
-using PolicyManagement.Domain.Enums;
-using PolicyManagementApp.Api.Models.ApiModels;
 using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.OutputCaching;
+using PolicyManagement.Application.Common.Enums;
+using PolicyManagement.Infrastructure.Cache;
 
 namespace PolicyManagementApp.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/{policies}")]
 [Produces("application/json")]
+[EnableRateLimiting("api_policy")]
 public class PolicyController : ControllerBase
 {
     private readonly IPolicyService _policyService;
     private readonly IMultipleTenantPolicyService _multipleTenantPolicyService;
+    private readonly ICacheHelper _cacheHelper;
 
     public PolicyController(
         IPolicyService policyService,
-        IMultipleTenantPolicyService multipleTenantPolicyService)
+        IMultipleTenantPolicyService multipleTenantPolicyService,
+        ICacheHelper cacheHelper)
     {
         _policyService = policyService;
         _multipleTenantPolicyService = multipleTenantPolicyService;
+        _cacheHelper = cacheHelper;
     }
-    
+
     [HttpPost]
     [Authorize(Roles = $"{nameof(Role.TenantsSuperAdmin)},{nameof(Role.TenantAdmin)}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PolicyDto))]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ErrorResponseModel))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
     public async Task<IActionResult> CreatePolicy([FromBody] CreatePolicyDto createPolicyDto, CancellationToken cancellationToken = default)
     {
         if (!ModelState.IsValid)
@@ -37,28 +43,48 @@ public class PolicyController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        if (User != null && User.IsInRole(nameof(Role.TenantAdmin)))
+        try
         {
-            var tenantId = User.FindFirstValue("TenantId");
-            if (string.IsNullOrEmpty(tenantId))
+            if (User.IsInRole(nameof(Role.TenantAdmin)))
             {
-                return BadRequest("Tenant information is missing");
+                var userTenantId = User.FindFirstValue("apptenid");
+                if (string.IsNullOrEmpty(userTenantId))
+                {
+                    return BadRequest("Tenant information is missing");
+                }
+                
+                // For tenant admin, always use their tenant ID
+                createPolicyDto.TenantId = userTenantId;
             }
-
-            createPolicyDto.TenantId = tenantId;
+            else if (User.IsInRole(nameof(Role.TenantsSuperAdmin)) && string.IsNullOrEmpty(createPolicyDto.TenantId))
+            {
+                return BadRequest("Tenant ID is required");
+            }
+            
+            var createdPolicy = await _multipleTenantPolicyService.CreatePolicyAsync(createPolicyDto, createPolicyDto.TenantId, cancellationToken);
+            
+          
+            await _cacheHelper.InvalidateOutputCache(cancellationToken);
+            
+            return Ok(createdPolicy);
         }
-
-        var createdPolicy = await _policyService.CreatePolicyAsync(createPolicyDto, cancellationToken);
-        return Ok(createdPolicy);
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
     }
 
     [HttpPut("{id}")]
     [Authorize(Roles = $"{nameof(Role.TenantsSuperAdmin)},{nameof(Role.TenantAdmin)}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PolicyDto))]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ErrorResponseModel))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
     public async Task<IActionResult> UpdatePolicy(int id, [FromBody] UpdatePolicyDto updatePolicyDto, CancellationToken cancellationToken = default)
     {
         if (!ModelState.IsValid)
@@ -66,45 +92,97 @@ public class PolicyController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        if (User != null && User.IsInRole(nameof(Role.TenantAdmin)))
+        try
         {
-            var policy = await _policyService.GetPolicyByClientIdAsync(id, cancellationToken);
-            if (policy == null)
+            if (User.IsInRole(nameof(Role.TenantAdmin)))
             {
-                return NotFound();
+                var userTenantId = User.FindFirstValue("apptenid");
+                if (string.IsNullOrEmpty(userTenantId))
+                {
+                    return BadRequest("Tenant information is missing");
+                }
+                
+                // For tenant admin, always use their tenant ID
+                updatePolicyDto.TenantId = userTenantId;
+                
+                // Check if policy exists and belongs to the tenant
+                var policy = await _multipleTenantPolicyService.GetPolicyByIdAndTenantIdAsync(id, userTenantId, cancellationToken);
+                if (policy == null)
+                {
+                    return NotFound($"Policy with ID {id} not found for tenant {userTenantId}");
+                }
+            }
+            else if (User.IsInRole(nameof(Role.TenantsSuperAdmin)) && string.IsNullOrEmpty(updatePolicyDto.TenantId))
+            {
+                return BadRequest("Tenant ID is required");
             }
 
-            var tenantId = User.FindFirstValue("TenantId");
-            if (string.IsNullOrEmpty(tenantId) || policy.TenantId != tenantId)
-            {
-                return Forbid();
-            }
+            updatePolicyDto.Id = id;
+            var updatedPolicy = await _multipleTenantPolicyService.UpdatePolicyAsync(updatePolicyDto, updatePolicyDto.TenantId, cancellationToken);
+            
+            await _cacheHelper.InvalidateOutputCache(cancellationToken);
+            
+            return Ok(updatedPolicy);
         }
-
-        var updatedPolicy = await _policyService.UpdatePolicyAsync(id, updatePolicyDto, cancellationToken);
-        return Ok(updatedPolicy);
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = $"{nameof(Role.TenantsSuperAdmin)},{nameof(Role.TenantAdmin)}")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PolicyDto))]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ErrorResponseModel))]
-    public async Task<IActionResult> DeletePolicy(int id, CancellationToken cancellationToken = default)
+    [Authorize(Roles = $"{nameof(Role.TenantsSuperAdmin)}")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
+    public async Task<IActionResult> DeletePolicy([FromRoute] int id, [FromQuery] DeletePolicyDto deleteDto, CancellationToken cancellationToken = default)
     {
-        var deletedPolicy = await _policyService.DeletePolicyAsync(id, cancellationToken);
-        return Ok(deletedPolicy);
+        if (deleteDto == null)
+        {
+            deleteDto = new DeletePolicyDto();
+        }
+        
+        // Always use ID from route
+        deleteDto.Id = id;
+        
+        if (string.IsNullOrEmpty(deleteDto.TenantId) && User.IsInRole(nameof(Role.TenantAdmin)))
+        {
+            deleteDto.TenantId = User.FindFirstValue("apptenid");
+            if (string.IsNullOrEmpty(deleteDto.TenantId))
+            {
+                return BadRequest("Tenant information is missing");
+            }
+        }
+        
+        try
+        {
+            bool result = await _multipleTenantPolicyService.DeletePolicyAsync(deleteDto, cancellationToken);
+            
+            if (!result)
+            {
+                return NotFound($"Policy with ID {deleteDto.Id} not found for tenant {deleteDto.TenantId}");
+            }
+            
+            // Invalidate the policies cache after deleting a policy
+            await _cacheHelper.InvalidateOutputCache(cancellationToken);
+            
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 
     [HttpGet("{id}")]
     [Authorize]
-    [ResponseCache(Duration = 120, Location = ResponseCacheLocation.Any)]
+    [OutputCache(PolicyName = "Policies", Tags = new[] { CacheConstants.PoliciesTag })]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PolicyDto))]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ErrorResponseModel))]
+    [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
     public async Task<IActionResult> GetPolicyById(int id, [FromQuery] string tenantId, CancellationToken cancellationToken = default)
     {
         if (User == null)
@@ -113,7 +191,7 @@ public class PolicyController : ControllerBase
         }
 
         PolicyDto? policy = User.IsInRole(nameof(Role.TenantsSuperAdmin))
-            ? await _policyService.GetPolicyByIdAsync(id, tenantId, cancellationToken)
+            ? await _multipleTenantPolicyService.GetPolicyByIdAndTenantIdAsync(id, tenantId, cancellationToken)
             : await _policyService.GetPolicyByClientIdAsync(id, cancellationToken);
 
         return policy != null ? Ok(policy) : NotFound();
@@ -121,43 +199,60 @@ public class PolicyController : ControllerBase
 
     [HttpGet]
     [Authorize]
-    [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "pageNumber", "pageSize" })]
+    [OutputCache(PolicyName = "Policies", Tags = new[] { CacheConstants.PoliciesTag })]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PolicyResponseDto))]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ErrorResponseModel))]
-    public async Task<IActionResult> GetPoliciesBasedOnUserRole([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
+    public async Task<IActionResult> GetPoliciesBasedOnUserRole(
+        [FromQuery] int pageNumber = 1, 
+        [FromQuery] int pageSize = 10, 
+        [FromQuery] string sortColumn = "id", 
+        [FromQuery] string sortDirection = "asc", 
+        CancellationToken cancellationToken = default)
     {
         if (User == null)
         {
             return BadRequest("User information is missing");
         }
 
-        if (User.IsInRole(nameof(Role.TenantsSuperAdmin)))
+        try
         {
-            var response = await _multipleTenantPolicyService.GetPoliciesAcrossTenantsAsync(pageNumber, pageSize, cancellationToken);
-            return Ok(response);
-        }
-        else if (User.IsInRole(nameof(Role.TenantAdmin)))
-        {
-            var tenantId = User.FindFirstValue("TenantId");
-            if (string.IsNullOrEmpty(tenantId))
-            {
-                return BadRequest("Tenant information is missing");
-            }
+            PolicyResponseDto response;
 
-            var response = await _policyService.GetPoliciesByTenantIdAsync(tenantId, pageNumber, pageSize, cancellationToken);
-            return Ok(response);
-        }
-        else
-        {
-            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int clientId))
+            if (User.IsInRole(nameof(Role.TenantsSuperAdmin)))
             {
-                return BadRequest("Invalid user information");
+                response = await _multipleTenantPolicyService.GetPoliciesAcrossTenantsAsync(pageNumber, pageSize, sortColumn, sortDirection, cancellationToken);
+                return Ok(response);
             }
+            else if (User.IsInRole(nameof(Role.TenantAdmin)))
+            {
+                var tenantId = User.FindFirstValue("apptenid");
 
-            var response = await _policyService.GetPoliciesByClientIdAsync(clientId, pageNumber, pageSize, cancellationToken);
-            return Ok(response);
+                if (string.IsNullOrEmpty(tenantId))
+                {
+                    return BadRequest("Tenant information is missing");
+                }
+
+                response = await _policyService.GetPoliciesByTenantIdAsync(tenantId, pageNumber, pageSize, sortColumn, sortDirection, cancellationToken);
+                return Ok(response);
+            }
+            else
+            {
+                var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (!int.TryParse(userIdClaim, out int clientId))
+                {
+                    return BadRequest("Invalid user information");
+                }
+
+                response = await _policyService.GetPoliciesByClientIdAsync(clientId, pageNumber, pageSize, sortColumn, sortDirection, cancellationToken);
+                return Ok(response);
+            }
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
         }
     }
 }

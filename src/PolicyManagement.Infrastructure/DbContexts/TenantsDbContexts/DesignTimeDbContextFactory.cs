@@ -17,7 +17,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<TenantDbCo
 
         var optionsBuilder = new DbContextOptionsBuilder<TenantDbContextBase>();
 
-        // The connection string will never be used, it is only for design time
+        // The connection string will never be used, it is only for design time (for migrations) 
         var connectionString = configuration.GetConnectionString("DesignTimeConnection");
         optionsBuilder.UseSqlServer(connectionString, opts =>
              opts.MigrationsAssembly(typeof(TenantDbContextBase).Assembly.FullName));

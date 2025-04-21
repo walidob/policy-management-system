@@ -52,14 +52,13 @@ public class PolicyRepository : BaseRepository, IPolicyRepository
             .FirstOrDefaultAsync(p => p.Id == id && p.TenantId == tenantId, cancellationToken);
     }
 
-    public async Task<(List<Policy> Policies, int TotalCount)> GetAllPoliciesAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<(List<Policy> Policies, int TotalCount)> GetAllPoliciesAsync(int pageNumber, int pageSize, string sortColumn = "id", string sortDirection = "asc", CancellationToken cancellationToken = default)
     {
         var baseQuery = DbContext.Policies.AsNoTracking();
         
         var totalCount = await baseQuery.CountAsync(cancellationToken);
         
-        var policies = await baseQuery
-            .OrderByDescending(p => p.CreationDate)
+        var policies = await ApplySorting(baseQuery, sortColumn, sortDirection)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Include(p => p.PolicyType)
@@ -68,18 +67,17 @@ public class PolicyRepository : BaseRepository, IPolicyRepository
         return (policies, totalCount);
     }
 
-    public async Task<(List<Policy> Policies, int TotalCount)> GetPoliciesByClientIdAsync(int clientId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<(List<Policy> Policies, int TotalCount)> GetPoliciesByClientIdAsync(int clientId, int pageNumber, int pageSize, string sortColumn = "id", string sortDirection = "asc", CancellationToken cancellationToken = default)
     {
         var baseQuery = DbContext.ClientPolicies
             .AsNoTracking()
             .Where(cp => cp.ClientId == clientId)
-          .Include(cp => cp.Policy.PolicyType)
-.Select(cp => cp.Policy);
+            .Include(cp => cp.Policy.PolicyType)
+            .Select(cp => cp.Policy);
 
         var totalCount = await baseQuery.CountAsync(cancellationToken);
         
-        var paginatedPolicies = await baseQuery
-            .OrderByDescending(p => p.CreationDate)
+        var paginatedPolicies = await ApplySorting(baseQuery, sortColumn, sortDirection)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
@@ -87,7 +85,7 @@ public class PolicyRepository : BaseRepository, IPolicyRepository
         return (paginatedPolicies, totalCount);
     }
 
-    public async Task<(List<Policy> Policies, int TotalCount)> GetPoliciesByTenantIdAsync(string tenantId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<(List<Policy> Policies, int TotalCount)> GetPoliciesByTenantIdAsync(string tenantId, int pageNumber, int pageSize, string sortColumn = "id", string sortDirection = "asc", CancellationToken cancellationToken = default)
     {
         var baseQuery = DbContext.Policies
             .AsNoTracking()
@@ -95,13 +93,27 @@ public class PolicyRepository : BaseRepository, IPolicyRepository
             
         var totalCount = await baseQuery.CountAsync(cancellationToken);
         
-        var paginatedPolicies = await baseQuery
-            .OrderByDescending(p => p.CreationDate)
+        var paginatedPolicies = await ApplySorting(baseQuery, sortColumn, sortDirection)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Include(p => p.PolicyType)
             .ToListAsync(cancellationToken);
         
         return (paginatedPolicies, totalCount);
+    }
+
+    private static IQueryable<Policy> ApplySorting(IQueryable<Policy> query, string sortColumn, string sortDirection)
+    {
+        bool isAscending = sortDirection.Equals("asc", StringComparison.CurrentCultureIgnoreCase);
+        
+        return sortColumn.ToLower() switch
+        {
+            "id" => isAscending ? query.OrderBy(p => p.Id) : query.OrderByDescending(p => p.Id),
+            "name" => isAscending ? query.OrderBy(p => p.Name) : query.OrderByDescending(p => p.Name),
+            "creationdate" => isAscending ? query.OrderBy(p => p.CreationDate) : query.OrderByDescending(p => p.CreationDate),
+            "effectivedate" => isAscending ? query.OrderBy(p => p.EffectiveDate) : query.OrderByDescending(p => p.EffectiveDate),
+            "expirydate" => isAscending ? query.OrderBy(p => p.ExpiryDate) : query.OrderByDescending(p => p.ExpiryDate),
+            _ => isAscending ? query.OrderBy(p => p.Id) : query.OrderByDescending(p => p.Id),
+        };
     }
 }

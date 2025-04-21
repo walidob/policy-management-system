@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Caching.Memory;
 using System.Collections.Concurrent;
 
@@ -8,14 +9,17 @@ public class CacheHelper : ICacheHelper
     private readonly IMemoryCache _cache;
     private readonly ConcurrentBag<string> _cacheKeys;
     private readonly TimeSpan _defaultSlidingExpiration;
+    private readonly IOutputCacheStore _outputCacheStore;
 
-    public CacheHelper(IMemoryCache cache)
+    public CacheHelper(IMemoryCache cache, IOutputCacheStore outputCacheStore)
     {
         _cache = cache;
         _cacheKeys = [];
         _defaultSlidingExpiration = TimeSpan.FromMinutes(15);
+        _outputCacheStore = outputCacheStore;
     }
 
+    #region IMemoryCache
     public bool TryGetValue<T>(string key, out T value)
     {
         return _cache.TryGetValue(key, out value);
@@ -48,9 +52,20 @@ public class CacheHelper : ICacheHelper
         
         _cacheKeys.Clear();
     }
+    #endregion
 
-    public void InvalidateSpecificCache(string key)
+
+    #region IOutputCache
+    public async Task EvictByTagAsync(string tag, CancellationToken cancellationToken = default)
     {
-        _cache.Remove(key);
+        await _outputCacheStore.EvictByTagAsync(tag, cancellationToken);
+        
+        InvalidateCache();
     }
+    
+    public async Task InvalidateOutputCache(CancellationToken cancellationToken = default)
+    {
+        await EvictByTagAsync(CacheConstants.PoliciesTag, cancellationToken);
+    }
+    #endregion
 } 

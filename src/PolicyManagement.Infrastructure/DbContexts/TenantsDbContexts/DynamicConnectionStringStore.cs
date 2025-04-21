@@ -1,10 +1,9 @@
 ﻿using Finbuckle.MultiTenant.Abstractions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using PolicyManagement.Application.Interfaces.Services;
 using PolicyManagement.Domain.Entities.DefaultDb;
 using PolicyManagement.Infrastructure.Cache;
-using PolicyManagement.Infrastructure.DbContexts.DefaultDb;
 
 namespace PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts;
 public class DynamicConnectionStringStore : IMultiTenantStore<AppTenantInfo>
@@ -33,11 +32,9 @@ public class DynamicConnectionStringStore : IMultiTenantStore<AppTenantInfo>
         try
         {
             using var scope = _serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+            var tenantService = scope.ServiceProvider.GetRequiredService<ITenantInformationService>();
             
-            tenant = await dbContext.Tenants
-                .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.Id == id);
+            tenant = await tenantService.GetTenantByIdAsync(id);
                 
             if (tenant != null)
             {
@@ -60,11 +57,9 @@ public class DynamicConnectionStringStore : IMultiTenantStore<AppTenantInfo>
             _logger.LogInformation("Fetching all tenants");
             
             using var scope = _serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+            var tenantService = scope.ServiceProvider.GetRequiredService<ITenantInformationService>();
             
-            var tenants = await dbContext.Tenants
-                .AsNoTracking()
-                .ToListAsync();
+            var tenants = await tenantService.GetAllTenantsAsync();
   
             foreach (var tenant in tenants)
             {

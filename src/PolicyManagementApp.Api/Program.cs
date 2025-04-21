@@ -3,9 +3,11 @@ using PolicyManagement.Application.Extensions;
 using PolicyManagement.Infrastructure.DbContexts.DefaultDb.Initialization;
 using PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts.Initialization;
 using PolicyManagement.Infrastructure.Extensions;
+using PolicyManagementApp.Api.Extensions;
 using PolicyManagementApp.Api.Middleware;
 using Scalar.AspNetCore;
 using Serilog;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,11 +17,35 @@ Log.Information("API Starting Up.");
 
 builder.Services.AddApplicationServices()
     .AddInfrastructureServices(builder.Configuration)
-    .AddResponseCaching();
+     .AddApiOutputCache()
+    .AddApiRateLimiting()
+    .AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+    });
 
 builder.Services.AddControllers();
 builder.Services.AddMemoryCache(); 
-builder.Services.AddProblemDetails();
+
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        context.ProblemDetails.Instance = 
+            $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+        
+        context.ProblemDetails.Extensions["requestId"] = 
+            context.HttpContext.TraceIdentifier;
+        
+        var activity = Activity.Current;
+        if (activity != null)
+        {
+            context.ProblemDetails.Extensions["traceId"] = activity.Id;
+        }
+    };
+});
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddOpenApi();
 
@@ -49,8 +75,7 @@ await app.Services.SeedTenantsDbsDataAsync();
 
 Log.Information("Configuring middleware pipeline.");
 
-// Global exception handling middleware
-app.UseGlobalExceptionHandler();
+app.UseExceptionHandler();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -65,11 +90,17 @@ else
 }
 
 app.UseDefaultFiles();
-app.MapStaticAssets();
+app.MapStaticAssets(); 
+
 app.UseHttpsRedirection();
 app.UseStatusCodePages();
 
-app.UseResponseCaching();
+app.UseCookiePolicy();
+
+app.UseOutputCache();
+
+app.UseRateLimiter();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMultiTenant();
@@ -77,8 +108,6 @@ app.UseMultiTenant();
 app.MapControllers();
 
 app.MapHealthChecks("/health");
-
-app.MapFallbackToFile("/index.html");
 
 Log.Information("Application running.");
 

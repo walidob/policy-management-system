@@ -2,10 +2,10 @@
 using Finbuckle.MultiTenant.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using PolicyManagement.Application.Common.Enums;
 using PolicyManagement.Domain.Entities.DefaultDb;
 using PolicyManagement.Domain.Entities.TenantsDb;
-using PolicyManagement.Domain.Entities.TenantsDb.Lookup;
-using PolicyManagement.Domain.Enums;
+using PolicyManagement.Domain.Entities.TenantsDb.Lookups;
 
 namespace PolicyManagement.Infrastructure.DbContexts.TenantsDbContexts.Initialization;
 
@@ -93,29 +93,57 @@ public class TenantDataSeeder
     {
         var policyTypes = Enum.GetValues<PolicyType>()
             .Cast<PolicyType>()
-            .Select(pt => new PolicyTypeLookup { Name = pt.ToString() });
+            .Select(pt => new PolicyTypeLookup { 
+                Name = pt.ToString(),
+                DisplayName = GetDisplayName(pt)
+            });
 
         foreach (var policyType in policyTypes)
         {
-            if (!await context.PolicyTypes.AnyAsync(pt => pt.Name == policyType.Name))
+            var existingPolicyType = await context.PolicyTypes.FirstOrDefaultAsync(pt => pt.Name == policyType.Name);
+            if (existingPolicyType == null)
             {
                 context.PolicyTypes.Add(policyType);
+            }
+            else if (string.IsNullOrEmpty(existingPolicyType.DisplayName))
+            {
+                existingPolicyType.DisplayName = policyType.DisplayName;
+                context.PolicyTypes.Update(existingPolicyType);
             }
         }
 
         var claimStatuses = Enum.GetValues<ClaimStatus>()
             .Cast<ClaimStatus>()
-            .Select(cs => new ClaimStatusLookup { Name = cs.ToString() });
+            .Select(cs => new ClaimStatusLookup { 
+                Name = cs.ToString(),
+                DisplayName = GetDisplayName(cs)
+            });
 
         foreach (var claimStatus in claimStatuses)
         {
-            if (!await context.ClaimStatuses.AnyAsync(cs => cs.Name == claimStatus.Name))
+            var existingClaimStatus = await context.ClaimStatuses.FirstOrDefaultAsync(cs => cs.Name == claimStatus.Name);
+            if (existingClaimStatus == null)
             {
                 context.ClaimStatuses.Add(claimStatus);
+            }
+            else if (string.IsNullOrEmpty(existingClaimStatus.DisplayName))
+            {
+                existingClaimStatus.DisplayName = claimStatus.DisplayName;
+                context.ClaimStatuses.Update(existingClaimStatus);
             }
         }
 
         await context.SaveChangesAsync();
+    }
+
+    private static string GetDisplayName<T>(T enumValue) where T : Enum
+    {
+        var displayAttribute = enumValue.GetType()
+            .GetField(enumValue.ToString())
+            .GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false)
+            .FirstOrDefault() as System.ComponentModel.DataAnnotations.DisplayAttribute;
+
+        return displayAttribute?.Name ?? enumValue.ToString();
     }
 
     private async Task GenerateRandomDataAsync(TenantDbContextBase context, string tenantId)

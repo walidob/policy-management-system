@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using PolicyManagement.Domain.Entities.TenantsDb.Lookups;
 
 namespace PolicyManagement.Domain.Entities.TenantsDb;
 
@@ -20,7 +21,10 @@ public class Claim
     public decimal Amount { get; set; }
     
     [Required]
+    [ForeignKey(nameof(ClaimStatus))]
     public int Status { get; set; }
+    
+    public virtual ClaimStatusLookup ClaimStatus { get; set; }
     
     [Required]
     public string ClaimNumber { get; set; }

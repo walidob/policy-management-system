@@ -4,6 +4,8 @@ namespace PolicyManagement.Domain.Entities.DefaultDb.Identity;
 
 public class ApplicationRole : IdentityRole<int>
 {
+    public string DisplayName { get; set; }
+    
     public ApplicationRole() : base()
     {
     }

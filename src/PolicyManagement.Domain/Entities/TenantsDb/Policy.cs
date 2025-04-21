@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using PolicyManagement.Domain.Entities.TenantsDb.Lookup;
+using PolicyManagement.Domain.Entities.TenantsDb.Lookups;
 
 namespace PolicyManagement.Domain.Entities.TenantsDb;
 

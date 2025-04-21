@@ -14,8 +14,7 @@ public static class ApplicationServiceExtensions
         
         return services;
     }
-
-    public static IHostBuilder UseSerilogConfiguration(this IHostBuilder host)
+   public static IHostBuilder UseSerilogConfiguration(this IHostBuilder host)
     {
         host.UseSerilog((context, services, configuration) => configuration
             .ReadFrom.Configuration(context.Configuration)
