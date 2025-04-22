@@ -1,0 +1,59 @@
+.all-policies-container {
+  margin-top: 20px;
+  padding: 1rem;
+}
+
+.badge {
+  padding: 8px 12px;
+}
+
+.page-link {
+  cursor: pointer;
+}
+
+.page-item.active .page-link {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+.table-responsive {
+  min-height: 0.01%;
+  overflow-x: auto;
+  width: 100%;
+  margin-bottom: 15px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  background-color: #f8f9fa;
+}
+
+.sortable i {
+  margin-left: 5px;
+  font-size: 0.8rem;
+}
+
+.pagination .page-link {
+  cursor: pointer;
+}
+
+.pagination .disabled .page-link {
+  cursor: not-allowed;
+}
+
+@media screen and (max-width: 767px) {
+  .table-responsive {
+    width: 100%;
+    border: 1px solid #ddd;
+  }
+  
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+} 

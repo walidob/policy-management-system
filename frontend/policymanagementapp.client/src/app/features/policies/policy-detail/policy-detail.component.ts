@@ -1,0 +1,175 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { Policy } from '../../../shared/models/interfaces/policy.models';
+import { PolicyService } from '../../../core/services/policy.service';
+import { catchError, finalize, of, switchMap } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
+import { UserInfo } from '../../../core/models/auth.model';
+import { MetadataService } from '../../../core/services/metadata.service';
+
+@Component({
+  selector: 'app-policy-detail',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  templateUrl: './policy-detail.component.html',
+  styleUrls: ['./policy-detail.component.css']
+})
+export class PolicyDetailComponent implements OnInit {
+  policy: Policy | null = null;
+  loading = false;
+  error = false;
+  errorMessage = '';
+  policyId: number = 0;
+  tenantId: string | null = null;
+  policyTypeDisplayName: string = '';
+  
+  user: UserInfo | null = null;
+  isSuperAdmin = false;
+  isAdmin = false;
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private policyService: PolicyService,
+    private authService: AuthService,
+    private metadataService: MetadataService
+  ) {}
+
+  ngOnInit(): void {
+    this.authService.user$.subscribe(user => {
+      this.user = user;
+      this.isSuperAdmin = !!user?.isSuperAdmin;
+      this.isAdmin = !!user?.roles?.includes('TenantAdmin');
+      
+      if (this.isAdmin && !this.isSuperAdmin && user?.tenantId) {
+        this.tenantId = user.tenantId;
+      }
+    });
+    
+    this.route.params.subscribe(params => {
+      const id = +params['id'];
+      if (id) {
+        this.policyId = id;
+        this.route.queryParams.subscribe(queryParams => {
+          if (this.isSuperAdmin && queryParams['tenantId']) {
+            this.tenantId = queryParams['tenantId'];
+          }
+          
+          this.loadPolicy(id);
+        });
+      } else {
+        this.error = true;
+        this.errorMessage = 'No policy ID provided';
+        this.loading = false;
+      }
+    });
+  }
+
+  loadPolicy(id: number): void {
+    this.loading = true;
+    this.error = false;
+    
+    // For super admin without tenant ID, first try to get basic policy info to extract tenantId
+    if (this.isSuperAdmin && !this.tenantId) {
+      // First call to get the policies list to find the tenant ID
+      this.policyService.getAllPolicies(1, 100)
+        .pipe(
+          catchError(error => {
+            this.error = true;
+            this.errorMessage = 'Failed to retrieve policy information: ' + (error.message || 'Unknown error');
+            return of({ policies: [], totalCount: 0, pageNumber: 1, pageSize: 10 });
+          })
+        )
+        .subscribe(response => {
+          const foundPolicy = response.policies.find(p => p.id === id);
+          
+          if (foundPolicy && foundPolicy.tenantId) {
+            this.tenantId = foundPolicy.tenantId;
+          }
+          
+          // Now get the specific policy with the tenant ID
+          this.getPolicyWithTenantId(id);
+        });
+    } else {
+      // Regular flow when we already have tenant ID
+      this.getPolicyWithTenantId(id);
+    }
+  }
+  
+  private getPolicyWithTenantId(id: number): void {
+    this.policyService.getPolicyById(id, this.tenantId || undefined)
+      .pipe(
+        switchMap(policy => {
+          this.policy = policy;
+          
+          // If we get a policy and still don't have tenantId, use the one from the policy
+          if (policy && !this.tenantId && policy.tenantId) {
+            this.tenantId = policy.tenantId;
+          }
+          
+          // Get the policy type display name from metadata service
+          if (policy && policy.policyTypeId) {
+            return this.metadataService.getPolicyTypeDisplayName(policy.policyTypeId);
+          }
+          return of('');
+        }),
+        catchError(error => {
+          this.error = true;
+          this.errorMessage = 'Failed to load policy details: ' + (error.message || 'Unknown error');
+          return of('');
+        }),
+        finalize(() => {
+          this.loading = false;
+        })
+      )
+      .subscribe(displayName => {
+        if (displayName) {
+          this.policyTypeDisplayName = displayName;
+        } else if (this.policy?.policyTypeName) {
+          // Fallback to policyTypeName from API if available
+          this.policyTypeDisplayName = this.policy.policyTypeName;
+        }
+      });
+  }
+
+  getBadgeClass(policy: Policy): string {
+    const currentDate = new Date();
+    const expiryDate = new Date(policy.expiryDate);
+    
+    if (!policy.isActive) {
+      return 'bg-secondary';
+    } else if (expiryDate < currentDate) {
+      return 'bg-danger';
+    } else {
+      const daysUntilExpiry = Math.ceil((expiryDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysUntilExpiry <= 30) {
+        return 'bg-warning';
+      } else {
+        return 'bg-success';
+      }
+    }
+  }
+
+  getStatusText(policy: Policy): string {
+    const currentDate = new Date();
+    const expiryDate = new Date(policy.expiryDate);
+    
+    if (!policy.isActive) {
+      return 'Inactive';
+    } else if (expiryDate < currentDate) {
+      return 'Expired';
+    } else {
+      const daysUntilExpiry = Math.ceil((expiryDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysUntilExpiry <= 30) {
+        return 'Expiring Soon';
+      } else {
+        return 'Active';
+      }
+    }
+  }
+
+  cancel(): void {
+    this.router.navigate(['/policies']);
+  }
+} 

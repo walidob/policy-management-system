@@ -1,0 +1,95 @@
+<div class="update-policy-container">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="mb-0 text-primary">Update Policy</h2>
+      <button class="btn btn-outline-secondary" (click)="cancel()">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </button>
+    </div>
+    <div class="card-body">
+      <div *ngIf="loading" class="d-flex justify-content-center mb-3">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+      
+      <div *ngIf="error" class="alert alert-danger">
+        {{ errorMessage }}
+      </div>
+      
+      <form [formGroup]="policyForm" (ngSubmit)="onSubmit()">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="name" class="form-label">Policy Name</label>
+            <input type="text" id="name" class="form-control" formControlName="name">
+            <div *ngIf="submitted && policyForm.get('name')?.errors" class="text-danger mt-1">
+              <small *ngIf="policyForm.get('name')?.errors?.['required']">Policy name is required</small>
+              <small *ngIf="policyForm.get('name')?.errors?.['maxlength']">Name cannot exceed 256 characters</small>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <label for="policyTypeId" class="form-label">Policy Type</label>
+            <select id="policyTypeId" class="form-select" formControlName="policyTypeId">
+              <option value="">Select Policy Type</option>
+              <option *ngFor="let type of policyTypes" [value]="type.id">{{ type.name }}</option>
+            </select>
+            <div *ngIf="submitted && policyForm.get('policyTypeId')?.errors" class="text-danger mt-1">
+              <small *ngIf="policyForm.get('policyTypeId')?.errors?.['required']">Policy type is required</small>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-md-12">
+            <label for="description" class="form-label">Description</label>
+            <textarea id="description" class="form-control" rows="3" formControlName="description"></textarea>
+            <div *ngIf="submitted && policyForm.get('description')?.errors" class="text-danger mt-1">
+              <small *ngIf="policyForm.get('description')?.errors?.['maxlength']">Description cannot exceed 1000 characters</small>
+            </div>
+          </div>
+        </div>
+        
+        <h4 class="mt-4 mb-3 text-primary">Policy Dates</h4>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="effectiveDate" class="form-label">Effective Date</label>
+            <input type="date" id="effectiveDate" class="form-control" formControlName="effectiveDate">
+            <div *ngIf="submitted && policyForm.get('effectiveDate')?.errors" class="text-danger mt-1">
+              <small *ngIf="policyForm.get('effectiveDate')?.errors?.['required']">Effective date is required</small>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <label for="expiryDate" class="form-label">Expiry Date</label>
+            <input type="date" id="expiryDate" class="form-control" formControlName="expiryDate">
+            <div *ngIf="submitted && policyForm.get('expiryDate')?.errors" class="text-danger mt-1">
+              <small *ngIf="policyForm.get('expiryDate')?.errors?.['required']">Expiry date is required</small>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="isActive" formControlName="isActive">
+              <label class="form-check-label" for="isActive">
+                Active Policy
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="d-flex justify-content-end mt-4">
+          <button type="button" class="btn btn-outline-secondary me-2" (click)="cancel()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="loading">
+            <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

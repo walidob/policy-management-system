@@ -11,7 +11,6 @@ import { of } from 'rxjs';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="form-group">
-      <label *ngIf="label" [for]="id" class="form-label">{{ label }}</label>
       <select 
         [id]="id" 
         class="form-select"
@@ -70,7 +69,6 @@ export class PolicyTypeDropdownComponent implements OnInit {
   ngOnInit(): void {
     this.loadPolicyTypes();
     
-    // If control is not provided, create an empty one
     if (!this.control) {
       this.control = new FormControl();
     }

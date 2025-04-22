@@ -1,0 +1,89 @@
+<div class="all-policies-container">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="mb-0 text-primary">All Policies</h2>
+      <button *ngIf="isAdmin" class="btn btn-primary" (click)="createNewPolicy()">
+        <i class="bi bi-plus-circle me-1"></i> Create Policy
+      </button>
+    </div>
+    <div class="card-body">
+      <p *ngIf="loading">Loading policies...</p>
+      <p *ngIf="error" class="alert alert-danger">{{ errorMessage }}</p>
+      <div *ngIf="dataLoaded && !policies.length" class="alert alert-info">No policies found.</div>
+      
+      <div *ngIf="dataLoaded && policies.length" class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th class="sortable" (click)="sortBy('id')">
+                ID <i [class]="getSortIcon('id')"></i>
+              </th>
+              <th class="sortable" (click)="sortBy('name')">
+                Name <i [class]="getSortIcon('name')"></i>
+              </th>
+              <th class="sortable" (click)="sortBy('policyTypeName')">
+                Type <i [class]="getSortIcon('policyTypeName')"></i>
+              </th>
+              <th class="sortable" (click)="sortBy('effectiveDate')">
+                Effective Date <i [class]="getSortIcon('effectiveDate')"></i>
+              </th>
+              <th class="sortable" (click)="sortBy('expiryDate')">
+                Expiry Date <i [class]="getSortIcon('expiryDate')"></i>
+              </th>
+              <th class="sortable" (click)="sortBy('isActive')">
+                Status <i [class]="getSortIcon('isActive')"></i>
+              </th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let policy of policies">
+              <td>{{ policy.id }}</td>
+              <td>{{ policy.name }}</td>
+              <td>{{ policy.policyTypeName }}</td>
+              <td>{{ policy.effectiveDate | date:'mediumDate' }}</td>
+              <td>{{ policy.expiryDate | date:'mediumDate' }}</td>
+              <td>
+                <span class="badge" [ngClass]="getBadgeClass(policy)">
+                  {{ getStatusText(policy) }}
+                </span>
+              </td>
+              <td>
+                <div class="btn-group">
+                  <button class="btn btn-sm btn-outline-primary" (click)="viewPolicy(policy.id)">View</button>
+                  <button *ngIf="canEdit(policy)" class="btn btn-sm btn-outline-secondary" (click)="editPolicy(policy.id, policy.tenantId)">Edit</button>
+                  <button *ngIf="canDelete(policy)" class="btn btn-sm btn-outline-danger" (click)="deletePolicy(policy.id, policy.tenantId)">Delete</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div *ngIf="dataLoaded && policies.length" class="d-flex justify-content-between align-items-center mt-3">
+        <div>
+          Showing {{ (page - 1) * pageSize + 1 }} to {{ Math.min(page * pageSize, totalItems) }} of {{ totalItems }} entries
+        </div>
+        <nav aria-label="Policy pagination">
+          <ul class="pagination">
+            <li class="page-item" [class.disabled]="page === 1">
+              <button class="page-link text-primary" [disabled]="page === 1" (click)="onPageChange(page - 1)" [attr.aria-label]="'Previous page'">
+                <span aria-hidden="true">Previous</span>
+              </button>
+            </li>
+            <li *ngFor="let p of getPages()" class="page-item" [class.active]="p === page">
+              <button class="page-link" [ngClass]="{'bg-primary': p === page}" (click)="onPageChange(p)" [attr.aria-current]="p === page ? 'page' : null" [attr.aria-label]="'Page ' + p">
+                {{ p }}
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="page === getTotalPages()">
+              <button class="page-link text-primary" [disabled]="page === getTotalPages()" (click)="onPageChange(page + 1)" [attr.aria-label]="'Next page'">
+                <span aria-hidden="true">Next</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div> 

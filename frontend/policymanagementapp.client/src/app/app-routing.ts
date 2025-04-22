@@ -5,7 +5,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { AllPoliciesComponent } from './features/policies/all-policies/all-policies.component';
 import { EditPolicyComponent } from './features/policies/edit-policy/edit-policy.component';
 import { PolicyDetailComponent } from './features/policies/policy-detail/policy-detail.component';
-
+import { CreatePolicyComponent } from './features/policies/create-policy/create-policy.component';
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
@@ -16,8 +16,9 @@ export const routes: Routes = [
     children: [
       { path: 'login', component: LoginComponent },
       { path: 'policies', component: AllPoliciesComponent },
+      { path: 'policies/create', component: CreatePolicyComponent },
       { path: 'policies/edit/:id', component: EditPolicyComponent },
-      { path: 'policies/:id', component: PolicyDetailComponent },
+      { path: 'policies/:id', component: PolicyDetailComponent }
     ]
   },
   { path: '**', redirectTo: 'login' }
