@@ -82,8 +82,9 @@ public class TenantInformationService : ITenantInformationService
         }
     }
     
-    public async Task InvalidateTenantCacheAsync(CancellationToken cancellationToken = default)
+    public Task InvalidateTenantCacheAsync(CancellationToken cancellationToken = default)
     {
-        await _cacheHelper.EvictByTagAsync(CacheConstants.TenantsTag, cancellationToken);
+        _cacheHelper.InvalidateCache();
+        return Task.CompletedTask;
     }
 } 

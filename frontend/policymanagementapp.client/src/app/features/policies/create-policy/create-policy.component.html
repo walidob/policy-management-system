@@ -70,10 +70,20 @@
             <div class="card h-100">
               <div class="card-body">
                 <div class="mb-3">
+                  <label for="creationDate" class="form-label">Creation Date <span class="text-danger">*</span></label>
+                  <input type="date" id="creationDate" class="form-control" formControlName="creationDate">
+                  <div *ngIf="submitted && policyForm.get('creationDate')?.errors" class="text-danger mt-1">
+                    <small *ngIf="policyForm.get('creationDate')?.errors?.['required']">Creation date is required</small>
+                  </div>
+                </div>
+
+                <div class="mb-3">
                   <label for="effectiveDate" class="form-label">Effective Date <span class="text-danger">*</span></label>
                   <input type="date" id="effectiveDate" class="form-control" formControlName="effectiveDate">
                   <div *ngIf="submitted && policyForm.get('effectiveDate')?.errors" class="text-danger mt-1">
                     <small *ngIf="policyForm.get('effectiveDate')?.errors?.['required']">Effective date is required</small>
+                    <small *ngIf="policyForm.get('effectiveDate')?.errors?.['effectiveBeforeToday']">Effective date cannot be in the past</small>
+                    <small *ngIf="policyForm.get('effectiveDate')?.errors?.['effectiveBeforeCreation']">Effective date must be after or equal to creation date</small>
                   </div>
                 </div>
                 
@@ -82,6 +92,7 @@
                   <input type="date" id="expiryDate" class="form-control" formControlName="expiryDate">
                   <div *ngIf="submitted && policyForm.get('expiryDate')?.errors" class="text-danger mt-1">
                     <small *ngIf="policyForm.get('expiryDate')?.errors?.['required']">Expiry date is required</small>
+                    <small *ngIf="policyForm.get('expiryDate')?.errors?.['expiryBeforeEffective']">Expiry date must be after effective date</small>
                   </div>
                 </div>
                 

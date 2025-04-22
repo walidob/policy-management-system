@@ -4,16 +4,14 @@ using PolicyManagement.Application.DTOs.Policy;
 using PolicyManagement.Application.Interfaces.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.AspNetCore.OutputCaching;
 using PolicyManagement.Application.Common.Enums;
 using PolicyManagement.Infrastructure.Cache;
 
 namespace PolicyManagementApp.Api.Controllers;
 
 [ApiController]
-[Route("api/{policies}")]
+[Route("api/policies")]
 [Produces("application/json")]
-[EnableRateLimiting("api_policy")]
 public class PolicyController : ControllerBase
 {
     private readonly IPolicyService _policyService;
@@ -31,6 +29,7 @@ public class PolicyController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting("api_policy")]
     [Authorize(Roles = $"{nameof(Role.TenantsSuperAdmin)},{nameof(Role.TenantAdmin)}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PolicyDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
@@ -63,8 +62,7 @@ public class PolicyController : ControllerBase
             
             var createdPolicy = await _multipleTenantPolicyService.CreatePolicyAsync(createPolicyDto, createPolicyDto.TenantId, cancellationToken);
             
-          
-            await _cacheHelper.InvalidateOutputCache(cancellationToken);
+            _cacheHelper.InvalidateCache();
             
             return Ok(createdPolicy);
         }
@@ -78,14 +76,14 @@ public class PolicyController : ControllerBase
         }
     }
 
-    [HttpPut("{id}")]
+    [HttpPut]
     [Authorize(Roles = $"{nameof(Role.TenantsSuperAdmin)},{nameof(Role.TenantAdmin)}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PolicyDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ProblemDetails))]
     [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ProblemDetails))]
     [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
-    public async Task<IActionResult> UpdatePolicy(int id, [FromBody] UpdatePolicyDto updatePolicyDto, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> UpdatePolicy([FromBody] UpdatePolicyDto updatePolicyDto, CancellationToken cancellationToken = default)
     {
         if (!ModelState.IsValid)
         {
@@ -106,10 +104,10 @@ public class PolicyController : ControllerBase
                 updatePolicyDto.TenantId = userTenantId;
                 
                 // Check if policy exists and belongs to the tenant
-                var policy = await _multipleTenantPolicyService.GetPolicyByIdAndTenantIdAsync(id, userTenantId, cancellationToken);
+                var policy = await _multipleTenantPolicyService.GetPolicyByIdAndTenantIdAsync(updatePolicyDto.Id, userTenantId, cancellationToken);
                 if (policy == null)
                 {
-                    return NotFound($"Policy with ID {id} not found for tenant {userTenantId}");
+                    return NotFound($"Policy with ID {updatePolicyDto.Id} not found for tenant {userTenantId}");
                 }
             }
             else if (User.IsInRole(nameof(Role.TenantsSuperAdmin)) && string.IsNullOrEmpty(updatePolicyDto.TenantId))
@@ -117,10 +115,9 @@ public class PolicyController : ControllerBase
                 return BadRequest("Tenant ID is required");
             }
 
-            updatePolicyDto.Id = id;
             var updatedPolicy = await _multipleTenantPolicyService.UpdatePolicyAsync(updatePolicyDto, updatePolicyDto.TenantId, cancellationToken);
             
-            await _cacheHelper.InvalidateOutputCache(cancellationToken);
+            _cacheHelper.InvalidateCache();
             
             return Ok(updatedPolicy);
         }
@@ -130,22 +127,20 @@ public class PolicyController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete]
+    [EnableRateLimiting("api_policy")]
     [Authorize(Roles = $"{nameof(Role.TenantsSuperAdmin)}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
     [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ProblemDetails))]
     [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ProblemDetails))]
     [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
-    public async Task<IActionResult> DeletePolicy([FromRoute] int id, [FromQuery] DeletePolicyDto deleteDto, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> DeletePolicy([FromBody] DeletePolicyDto deleteDto, CancellationToken cancellationToken = default)
     {
         if (deleteDto == null)
         {
-            deleteDto = new DeletePolicyDto();
+            return BadRequest("Delete policy DTO is required");
         }
-        
-        // Always use ID from route
-        deleteDto.Id = id;
         
         if (string.IsNullOrEmpty(deleteDto.TenantId) && User.IsInRole(nameof(Role.TenantAdmin)))
         {
@@ -165,9 +160,6 @@ public class PolicyController : ControllerBase
                 return NotFound($"Policy with ID {deleteDto.Id} not found for tenant {deleteDto.TenantId}");
             }
             
-            // Invalidate the policies cache after deleting a policy
-            await _cacheHelper.InvalidateOutputCache(cancellationToken);
-            
             return Ok(result);
         }
         catch (KeyNotFoundException ex)
@@ -178,7 +170,6 @@ public class PolicyController : ControllerBase
 
     [HttpGet("{id}")]
     [Authorize]
-    [OutputCache(PolicyName = "Policies", Tags = new[] { CacheConstants.PoliciesTag })]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PolicyDto))]
     [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ProblemDetails))]
     [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
@@ -199,7 +190,6 @@ public class PolicyController : ControllerBase
 
     [HttpGet]
     [Authorize]
-    [OutputCache(PolicyName = "Policies", Tags = new[] { CacheConstants.PoliciesTag })]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PolicyResponseDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ProblemDetails))]

@@ -30,7 +30,7 @@
 }
 
 .sortable:hover {
-  background-color: #f8f9fa;
+  background-color: #f8f9fa; /* !important */
 }
 
 .sortable i {
@@ -44,6 +44,15 @@
 
 .pagination .disabled .page-link {
   cursor: not-allowed;
+}
+
+.pagination .page-link:hover {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+.pagination .page-item:not(.active) .page-link {
+  color: var(--bs-secondary);
 }
 
 @media screen and (max-width: 767px) {

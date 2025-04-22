@@ -151,7 +151,7 @@ public class DynamicConnectionStringStoreTests
             .Returns(false);
         
         _tenantInformationServiceMock.Setup(t => t.GetTenantByIdAsync(tenantId, default))
-            .ReturnsAsync((AppTenantInfo)null);
+            .ReturnsAsync((AppTenantInfo?)null);
 
         _serviceProviderMock.Setup(s => s.GetService(typeof(ITenantInformationService)))
             .Returns(_tenantInformationServiceMock.Object);

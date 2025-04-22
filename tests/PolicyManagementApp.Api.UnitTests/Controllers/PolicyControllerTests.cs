@@ -433,4 +433,440 @@ public class PolicyControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result);
         Assert.True((bool)okResult.Value);
     }
+
+    [Fact]
+    public async Task CreatePolicy_AsTenantAdmin_CreatesPolicy()
+    {
+        // Arrange
+        var tenantId = "tenant-1";
+        var createPolicyDto = new CreatePolicyDto
+        {
+            Name = "Test Policy",
+            Description = "Test policy description",
+            EffectiveDate = DateTime.Now,
+            ExpiryDate = DateTime.Now.AddYears(1),
+            PolicyTypeId = 1,
+            IsActive = true,
+            TenantId = null // Should be overridden by tenant admin's tenant ID
+        };
+
+        var createdPolicy = new PolicyDto
+        {
+            Id = 1,
+            Name = createPolicyDto.Name,
+            Description = createPolicyDto.Description,
+            EffectiveDate = createPolicyDto.EffectiveDate,
+            ExpiryDate = createPolicyDto.ExpiryDate,
+            PolicyTypeId = createPolicyDto.PolicyTypeId,
+            IsActive = createPolicyDto.IsActive,
+            TenantId = tenantId,
+            CreationDate = DateTime.Now
+        };
+
+        // Set up claims for TenantAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, "user-123"),
+            new Claim(ClaimTypes.Role, nameof(Role.TenantAdmin)),
+            new Claim("apptenid", tenantId)
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
+        
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = principal }
+        };
+        
+        _multipleTenantPolicyServiceMock
+            .Setup(s => s.CreatePolicyAsync(
+                It.Is<CreatePolicyDto>(dto => 
+                    dto.Name == createPolicyDto.Name && 
+                    dto.TenantId == tenantId), 
+                tenantId, 
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(createdPolicy);
+
+        // Act
+        var result = await _controller.CreatePolicy(createPolicyDto);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var returnedPolicy = Assert.IsType<PolicyDto>(okResult.Value);
+        
+        Assert.Equal(createPolicyDto.Name, returnedPolicy.Name);
+        Assert.Equal(tenantId, returnedPolicy.TenantId);
+        
+        // Verify cache was invalidated
+        _cacheHelperMock.Verify(c => c.InvalidateCache(), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreatePolicy_AsSuperAdmin_CreatesPolicy()
+    {
+        // Arrange
+        var tenantId = "tenant-2";
+        var createPolicyDto = new CreatePolicyDto
+        {
+            Name = "Super Admin Policy",
+            Description = "Test policy description by super admin",
+            EffectiveDate = DateTime.Now,
+            ExpiryDate = DateTime.Now.AddYears(1),
+            PolicyTypeId = 2,
+            IsActive = true,
+            TenantId = tenantId
+        };
+
+        var createdPolicy = new PolicyDto
+        {
+            Id = 2,
+            Name = createPolicyDto.Name,
+            Description = createPolicyDto.Description,
+            EffectiveDate = createPolicyDto.EffectiveDate,
+            ExpiryDate = createPolicyDto.ExpiryDate,
+            PolicyTypeId = createPolicyDto.PolicyTypeId,
+            IsActive = createPolicyDto.IsActive,
+            TenantId = tenantId,
+            CreationDate = DateTime.Now
+        };
+
+        // Set up claims for SuperAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, "super-admin-123"),
+            new Claim(ClaimTypes.Role, nameof(Role.TenantsSuperAdmin))
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
+        
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = principal }
+        };
+        
+        _multipleTenantPolicyServiceMock
+            .Setup(s => s.CreatePolicyAsync(
+                It.Is<CreatePolicyDto>(dto => 
+                    dto.Name == createPolicyDto.Name && 
+                    dto.TenantId == tenantId), 
+                tenantId, 
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(createdPolicy);
+
+        // Act
+        var result = await _controller.CreatePolicy(createPolicyDto);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var returnedPolicy = Assert.IsType<PolicyDto>(okResult.Value);
+        
+        Assert.Equal(createPolicyDto.Name, returnedPolicy.Name);
+        Assert.Equal(tenantId, returnedPolicy.TenantId);
+        
+        // Verify cache was invalidated
+        _cacheHelperMock.Verify(c => c.InvalidateCache(), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreatePolicy_WithInvalidModel_ReturnsBadRequest()
+    {
+        // Arrange
+        var createPolicyDto = new CreatePolicyDto
+        {
+            // Missing required fields
+        };
+
+        _controller.ModelState.AddModelError("Name", "Name is required");
+
+        // Act
+        var result = await _controller.CreatePolicy(createPolicyDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task CreatePolicy_AsSuperAdminWithoutTenantId_ReturnsBadRequest()
+    {
+        // Arrange
+        var createPolicyDto = new CreatePolicyDto
+        {
+            Name = "Invalid Policy",
+            Description = "Test policy description",
+            EffectiveDate = DateTime.Now,
+            ExpiryDate = DateTime.Now.AddYears(1),
+            PolicyTypeId = 1,
+            IsActive = true,
+            TenantId = null // Missing tenant ID
+        };
+
+        // Set up claims for SuperAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, nameof(Role.TenantsSuperAdmin))
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
+        
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = principal }
+        };
+
+        // Act
+        var result = await _controller.CreatePolicy(createPolicyDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task UpdatePolicy_AsTenantAdmin_UpdatesPolicy()
+    {
+        // Arrange
+        var tenantId = "tenant-1";
+        var policyId = 1;
+        
+        var updatePolicyDto = new UpdatePolicyDto
+        {
+            Id = policyId,
+            Name = "Updated Policy",
+            Description = "Updated policy description",
+            EffectiveDate = DateTime.Now,
+            ExpiryDate = DateTime.Now.AddYears(2),
+            PolicyTypeId = 1,
+            IsActive = true,
+            TenantId = null // Should be overridden by tenant admin's tenant ID
+        };
+
+        var existingPolicy = new PolicyDto
+        {
+            Id = policyId,
+            Name = "Original Policy",
+            Description = "Original description",
+            TenantId = tenantId
+        };
+
+        var updatedPolicy = new PolicyDto
+        {
+            Id = policyId,
+            Name = updatePolicyDto.Name,
+            Description = updatePolicyDto.Description,
+            EffectiveDate = updatePolicyDto.EffectiveDate,
+            ExpiryDate = updatePolicyDto.ExpiryDate,
+            PolicyTypeId = updatePolicyDto.PolicyTypeId,
+            IsActive = updatePolicyDto.IsActive,
+            TenantId = tenantId
+        };
+
+        // Set up claims for TenantAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, "user-123"),
+            new Claim(ClaimTypes.Role, nameof(Role.TenantAdmin)),
+            new Claim("apptenid", tenantId)
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
+        
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = principal }
+        };
+        
+        _multipleTenantPolicyServiceMock
+            .Setup(s => s.GetPolicyByIdAndTenantIdAsync(policyId, tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingPolicy);
+        
+        _multipleTenantPolicyServiceMock
+            .Setup(s => s.UpdatePolicyAsync(
+                It.Is<UpdatePolicyDto>(dto => 
+                    dto.Id == policyId && 
+                    dto.Name == updatePolicyDto.Name && 
+                    dto.TenantId == tenantId), 
+                tenantId, 
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedPolicy);
+
+        // Act
+        var result = await _controller.UpdatePolicy(updatePolicyDto);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var returnedPolicy = Assert.IsType<PolicyDto>(okResult.Value);
+        
+        Assert.Equal(updatePolicyDto.Name, returnedPolicy.Name);
+        Assert.Equal(tenantId, returnedPolicy.TenantId);
+        
+        // Verify cache was invalidated
+        _cacheHelperMock.Verify(c => c.InvalidateCache(), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdatePolicy_AsSuperAdmin_UpdatesPolicy()
+    {
+        // Arrange
+        var tenantId = "tenant-2";
+        var policyId = 2;
+        
+        var updatePolicyDto = new UpdatePolicyDto
+        {
+            Id = policyId,
+            Name = "Updated Super Admin Policy",
+            Description = "Updated policy description by super admin",
+            EffectiveDate = DateTime.Now,
+            ExpiryDate = DateTime.Now.AddYears(2),
+            PolicyTypeId = 2,
+            IsActive = true,
+            TenantId = tenantId
+        };
+
+        var updatedPolicy = new PolicyDto
+        {
+            Id = policyId,
+            Name = updatePolicyDto.Name,
+            Description = updatePolicyDto.Description,
+            EffectiveDate = updatePolicyDto.EffectiveDate,
+            ExpiryDate = updatePolicyDto.ExpiryDate,
+            PolicyTypeId = updatePolicyDto.PolicyTypeId,
+            IsActive = updatePolicyDto.IsActive,
+            TenantId = tenantId
+        };
+
+        // Set up claims for SuperAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, "super-admin-123"),
+            new Claim(ClaimTypes.Role, nameof(Role.TenantsSuperAdmin))
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
+        
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = principal }
+        };
+        
+        _multipleTenantPolicyServiceMock
+            .Setup(s => s.UpdatePolicyAsync(
+                It.Is<UpdatePolicyDto>(dto => 
+                    dto.Id == policyId && 
+                    dto.Name == updatePolicyDto.Name && 
+                    dto.TenantId == tenantId), 
+                tenantId, 
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedPolicy);
+
+        // Act
+        var result = await _controller.UpdatePolicy(updatePolicyDto);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var returnedPolicy = Assert.IsType<PolicyDto>(okResult.Value);
+        
+        Assert.Equal(updatePolicyDto.Name, returnedPolicy.Name);
+        Assert.Equal(tenantId, returnedPolicy.TenantId);
+        
+        // Verify cache was invalidated
+        _cacheHelperMock.Verify(c => c.InvalidateCache(), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdatePolicy_WithInvalidModel_ReturnsBadRequest()
+    {
+        // Arrange
+        var updatePolicyDto = new UpdatePolicyDto
+        {
+            // Missing required fields
+        };
+
+        _controller.ModelState.AddModelError("Name", "Name is required");
+
+        // Act
+        var result = await _controller.UpdatePolicy(updatePolicyDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task UpdatePolicy_AsSuperAdminWithoutTenantId_ReturnsBadRequest()
+    {
+        // Arrange
+        var updatePolicyDto = new UpdatePolicyDto
+        {
+            Id = 1,
+            Name = "Invalid Policy Update",
+            Description = "Test policy description",
+            EffectiveDate = DateTime.Now,
+            ExpiryDate = DateTime.Now.AddYears(1),
+            PolicyTypeId = 1,
+            IsActive = true,
+            TenantId = null // Missing tenant ID
+        };
+
+        // Set up claims for SuperAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Role, nameof(Role.TenantsSuperAdmin))
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
+        
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = principal }
+        };
+
+        // Act
+        var result = await _controller.UpdatePolicy(updatePolicyDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task UpdatePolicy_WithNonExistentPolicy_ReturnsNotFound()
+    {
+        // Arrange
+        var tenantId = "tenant-1";
+        var policyId = 999; // Non-existent ID
+        
+        var updatePolicyDto = new UpdatePolicyDto
+        {
+            Id = policyId,
+            Name = "Non-existent Policy",
+            Description = "This policy does not exist",
+            EffectiveDate = DateTime.Now,
+            ExpiryDate = DateTime.Now.AddYears(1),
+            PolicyTypeId = 1,
+            IsActive = true,
+            TenantId = tenantId
+        };
+
+        // Set up claims for TenantAdmin role
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, "user-123"),
+            new Claim(ClaimTypes.Role, nameof(Role.TenantAdmin)),
+            new Claim("apptenid", tenantId)
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
+        
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = principal }
+        };
+        
+        _multipleTenantPolicyServiceMock
+            .Setup(s => s.GetPolicyByIdAndTenantIdAsync(policyId, tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PolicyDto)null);
+
+        // Act
+        var result = await _controller.UpdatePolicy(updatePolicyDto);
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
 } 

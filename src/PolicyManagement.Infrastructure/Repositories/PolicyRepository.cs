@@ -113,6 +113,9 @@ public class PolicyRepository : BaseRepository, IPolicyRepository
             "creationdate" => isAscending ? query.OrderBy(p => p.CreationDate) : query.OrderByDescending(p => p.CreationDate),
             "effectivedate" => isAscending ? query.OrderBy(p => p.EffectiveDate) : query.OrderByDescending(p => p.EffectiveDate),
             "expirydate" => isAscending ? query.OrderBy(p => p.ExpiryDate) : query.OrderByDescending(p => p.ExpiryDate),
+            "policytypename" => isAscending ? query.Include(p => p.PolicyType).OrderBy(p => p.PolicyType.Name) : query.Include(p => p.PolicyType).OrderByDescending(p => p.PolicyType.Name),
+            "policytypeid" => isAscending ? query.OrderBy(p => p.PolicyTypeId) : query.OrderByDescending(p => p.PolicyTypeId),
+            "isactive" => isAscending ? query.OrderBy(p => p.IsActive) : query.OrderByDescending(p => p.IsActive),
             _ => isAscending ? query.OrderBy(p => p.Id) : query.OrderByDescending(p => p.Id),
         };
     }

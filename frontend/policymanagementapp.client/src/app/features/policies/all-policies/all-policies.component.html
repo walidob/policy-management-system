@@ -2,9 +2,11 @@
   <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h2 class="mb-0 text-primary">All Policies</h2>
-      <button *ngIf="isAdmin" class="btn btn-primary" (click)="createNewPolicy()">
-        <i class="bi bi-plus-circle me-1"></i> Create Policy
-      </button>
+      <div class="ms-auto">
+        <button *ngIf="isAdmin" class="btn btn-primary" (click)="createNewPolicy()">
+          <i class="bi bi-plus-circle me-1"></i> Create Policy
+        </button>
+      </div>
     </div>
     <div class="card-body">
       <p *ngIf="loading">Loading policies...</p>
@@ -21,8 +23,11 @@
               <th class="sortable" (click)="sortBy('name')">
                 Name <i [class]="getSortIcon('name')"></i>
               </th>
-              <th class="sortable" (click)="sortBy('policyTypeName')">
-                Type <i [class]="getSortIcon('policyTypeName')"></i>
+              <th>
+                Type
+              </th>
+              <th *ngIf="isSuperAdmin">
+                Tenant
               </th>
               <th class="sortable" (click)="sortBy('effectiveDate')">
                 Effective Date <i [class]="getSortIcon('effectiveDate')"></i>
@@ -41,6 +46,7 @@
               <td>{{ policy.id }}</td>
               <td>{{ policy.name }}</td>
               <td>{{ policy.policyTypeName }}</td>
+              <td *ngIf="isSuperAdmin">{{ policy.tenantName || policy.tenantId || 'N/A' }}</td>
               <td>{{ policy.effectiveDate | date:'mediumDate' }}</td>
               <td>{{ policy.expiryDate | date:'mediumDate' }}</td>
               <td>
@@ -50,7 +56,7 @@
               </td>
               <td>
                 <div class="btn-group">
-                  <button class="btn btn-sm btn-outline-primary" (click)="viewPolicy(policy.id)">View</button>
+                  <button class="btn btn-sm btn-outline-primary" (click)="viewPolicy(policy.id, policy.tenantId)">View</button>
                   <button *ngIf="canEdit(policy)" class="btn btn-sm btn-outline-secondary" (click)="editPolicy(policy.id, policy.tenantId)">Edit</button>
                   <button *ngIf="canDelete(policy)" class="btn btn-sm btn-outline-danger" (click)="deletePolicy(policy.id, policy.tenantId)">Delete</button>
                 </div>
@@ -72,7 +78,7 @@
               </button>
             </li>
             <li *ngFor="let p of getPages()" class="page-item" [class.active]="p === page">
-              <button class="page-link" [ngClass]="{'bg-primary': p === page}" (click)="onPageChange(p)" [attr.aria-current]="p === page ? 'page' : null" [attr.aria-label]="'Page ' + p">
+              <button class="page-link" [ngClass]="{'bg-primary text-white': p === page}" (click)="onPageChange(p)" [attr.aria-current]="p === page ? 'page' : null" [attr.aria-label]="'Page ' + p">
                 {{ p }}
               </button>
             </li>

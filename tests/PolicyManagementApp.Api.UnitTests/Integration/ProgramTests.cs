@@ -48,7 +48,6 @@ public class ProgramTests : IClassFixture<WebApplicationFactory<Program>>
         // Act
         builder.Services.AddApplicationServices()
             .AddInfrastructureServices(builder.Configuration)
-            .AddApiOutputCache()
             .AddApiRateLimiting();
             
         builder.Services.AddControllers();
@@ -75,7 +74,6 @@ public class ProgramTests : IClassFixture<WebApplicationFactory<Program>>
         
         builder.Services.AddApplicationServices()
             .AddInfrastructureServices(builder.Configuration)
-            .AddApiOutputCache()
             .AddApiRateLimiting();
             
         builder.Services.AddControllers();

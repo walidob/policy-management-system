@@ -27,6 +27,7 @@ export class PolicyDetailComponent implements OnInit {
   user: UserInfo | null = null;
   isSuperAdmin = false;
   isAdmin = false;
+  isClient = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -41,8 +42,9 @@ export class PolicyDetailComponent implements OnInit {
       this.user = user;
       this.isSuperAdmin = !!user?.isSuperAdmin;
       this.isAdmin = !!user?.roles?.includes('TenantAdmin');
+      this.isClient = !this.isSuperAdmin && !this.isAdmin;
       
-      if (this.isAdmin && !this.isSuperAdmin && user?.tenantId) {
+      if (!this.isSuperAdmin && user?.tenantId) {
         this.tenantId = user.tenantId;
       }
     });
@@ -52,7 +54,11 @@ export class PolicyDetailComponent implements OnInit {
       if (id) {
         this.policyId = id;
         this.route.queryParams.subscribe(queryParams => {
+          // For super admin, use tenantId from query params if available
           if (this.isSuperAdmin && queryParams['tenantId']) {
+            this.tenantId = queryParams['tenantId'];
+          } 
+          else if (!this.isSuperAdmin && queryParams['tenantId'] && (!this.tenantId || this.tenantId.trim() === '')) {
             this.tenantId = queryParams['tenantId'];
           }
           
@@ -70,14 +76,15 @@ export class PolicyDetailComponent implements OnInit {
     this.loading = true;
     this.error = false;
     
-    // For super admin without tenant ID, first try to get basic policy info to extract tenantId
-    if (this.isSuperAdmin && !this.tenantId) {
-      // First call to get the policies list to find the tenant ID
+    if (this.isSuperAdmin && (!this.tenantId || this.tenantId.trim() === '')) {
+      console.log('Super admin flow without tenant ID');
+      
       this.policyService.getAllPolicies(1, 100)
         .pipe(
           catchError(error => {
             this.error = true;
-            this.errorMessage = 'Failed to retrieve policy information: ' + (error.message || 'Unknown error');
+            this.errorMessage = 'Failed to retrieve policy information: ' + (error.error?.detail || error.message || 'Unknown error');
+            console.error('Policy list error:', error);
             return of({ policies: [], totalCount: 0, pageNumber: 1, pageSize: 10 });
           })
         )
@@ -85,30 +92,32 @@ export class PolicyDetailComponent implements OnInit {
           const foundPolicy = response.policies.find(p => p.id === id);
           
           if (foundPolicy && foundPolicy.tenantId) {
+            console.log('Found policy with tenant ID:', foundPolicy.tenantId);
             this.tenantId = foundPolicy.tenantId;
+            this.getPolicyWithTenantId(id);
+          } else {
+            this.error = true;
+            this.errorMessage = `Could not find policy with ID ${id} or tenant information is missing`;
+            this.loading = false;
           }
-          
-          // Now get the specific policy with the tenant ID
-          this.getPolicyWithTenantId(id);
         });
     } else {
-      // Regular flow when we already have tenant ID
       this.getPolicyWithTenantId(id);
     }
   }
-  
+
   private getPolicyWithTenantId(id: number): void {
-    this.policyService.getPolicyById(id, this.tenantId || undefined)
+    const tenantIdParam =  this.tenantId ;
+    
+    this.policyService.getPolicyById(id, tenantIdParam || undefined)
       .pipe(
         switchMap(policy => {
           this.policy = policy;
           
-          // If we get a policy and still don't have tenantId, use the one from the policy
-          if (policy && !this.tenantId && policy.tenantId) {
+          if (policy && policy.tenantId) {
             this.tenantId = policy.tenantId;
           }
           
-          // Get the policy type display name from metadata service
           if (policy && policy.policyTypeId) {
             return this.metadataService.getPolicyTypeDisplayName(policy.policyTypeId);
           }
@@ -116,7 +125,12 @@ export class PolicyDetailComponent implements OnInit {
         }),
         catchError(error => {
           this.error = true;
-          this.errorMessage = 'Failed to load policy details: ' + (error.message || 'Unknown error');
+          if (error.status === 400 && error.error?.detail?.includes('tenant')) {
+            this.errorMessage = 'Tenant ID is required to view this policy. Please contact your administrator.';
+          } else {
+            this.errorMessage = 'Failed to load policy details: ' + (error.error?.detail || error.message || 'Unknown error');
+          }
+          console.error('Policy detail error:', error);
           return of('');
         }),
         finalize(() => {
@@ -127,7 +141,6 @@ export class PolicyDetailComponent implements OnInit {
         if (displayName) {
           this.policyTypeDisplayName = displayName;
         } else if (this.policy?.policyTypeName) {
-          // Fallback to policyTypeName from API if available
           this.policyTypeDisplayName = this.policy.policyTypeName;
         }
       });
