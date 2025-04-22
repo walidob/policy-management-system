@@ -3,20 +3,23 @@ using PolicyManagement.Application.Contracts.Identity;
 using PolicyManagement.Domain.Entities.DefaultDb.Identity;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using PolicyManagement.Infrastructure.Cache;
 
 namespace PolicyManagementApp.Api.Controllers;
 
 [ApiController]
-[Route("api/{auth}")]
+[Route("api/auth")]
 [Produces("application/json")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ICacheHelper _cacheHelper;
     private const string AuthCookieName = "X-Access-Token";
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, ICacheHelper cacheHelper)
     {
         _authService = authService;
+        _cacheHelper = cacheHelper;
     }
 
     [HttpGet("check")]
@@ -86,7 +89,7 @@ public class AuthController : ControllerBase
                 email = response.Email,
                 firstName = response.FirstName,
                 lastName = response.LastName,
-                roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList(),
+                roles = response.Roles ?? User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList(),
                 isSuperAdmin = User.FindFirst("is_super_admin")?.Value == "true",
                 isAuthenticated = true
             });
@@ -108,13 +111,14 @@ public class AuthController : ControllerBase
         {
             await _authService.LogoutAsync();
             
-            // Clear the authentication cookie
             Response.Cookies.Delete(AuthCookieName, new CookieOptions 
             { 
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict
             });
+            
+            _cacheHelper.InvalidateCache();
             
             return Ok(new { message = "Logged out successfully" });
         }

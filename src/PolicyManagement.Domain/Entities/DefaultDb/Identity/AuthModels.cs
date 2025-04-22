@@ -21,4 +21,5 @@ public class AuthenticationResponse
     public string LastName { get; set; } = string.Empty;
     public string JwtToken { get; set; } = string.Empty;
     public DateTime TokenExpires { get; set; }
+    public List<string> Roles { get; set; } = new List<string>();
 }

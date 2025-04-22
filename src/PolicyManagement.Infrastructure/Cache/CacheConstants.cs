@@ -1,3 +1,5 @@
+using PolicyManagement.Application.DTOs.Policy;
+
 namespace PolicyManagement.Infrastructure.Cache;
 
 public static class CacheConstants
@@ -19,11 +21,17 @@ public static class CacheConstants
     public static string GetAllPoliciesCacheKey(int pageNumber, int pageSize, string sortColumn, string sortDirection) =>
         $"{AllPoliciesCacheKeyPrefix}_{pageNumber}_{pageSize}_{sortColumn}_{sortDirection}";
     
+    public static string GetAllPoliciesCacheKey(DeletePolicyDto deleteDto) =>
+        GetAllPoliciesCacheKey(deleteDto.PageNumber, deleteDto.PageSize, deleteDto.SortColumn, deleteDto.SortDirection);
+    
     public static string GetPolicyByIdCacheKey(int id, string tenantId) =>
         $"{PolicyByIdCacheKeyPrefix}_{id}_{tenantId}";
     
     public static string GetPoliciesByTenantCacheKey(string tenantId, int pageNumber, int pageSize, string sortColumn, string sortDirection) =>
         $"{PoliciesByTenantCacheKeyPrefix}_{tenantId}_{pageNumber}_{pageSize}_{sortColumn}_{sortDirection}";
+    
+    public static string GetPoliciesByTenantCacheKey(DeletePolicyDto deleteDto) =>
+        GetPoliciesByTenantCacheKey(deleteDto.TenantId, deleteDto.PageNumber, deleteDto.PageSize, deleteDto.SortColumn, deleteDto.SortDirection);
     
     public static string GetPoliciesByClientCacheKey(int clientId, int pageNumber, int pageSize, string sortColumn, string sortDirection) =>
         $"{PoliciesByClientCacheKeyPrefix}_{clientId}_{pageNumber}_{pageSize}_{sortColumn}_{sortDirection}";

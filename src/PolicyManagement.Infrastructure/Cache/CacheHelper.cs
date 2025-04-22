@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Caching.Memory;
 using System.Collections.Concurrent;
 
@@ -8,15 +7,11 @@ public class CacheHelper : ICacheHelper
 {
     private readonly IMemoryCache _cache;
     private readonly ConcurrentBag<string> _cacheKeys;
-    private readonly TimeSpan _defaultSlidingExpiration;
-    private readonly IOutputCacheStore _outputCacheStore;
 
-    public CacheHelper(IMemoryCache cache, IOutputCacheStore outputCacheStore)
+    public CacheHelper(IMemoryCache cache)
     {
         _cache = cache;
         _cacheKeys = [];
-        _defaultSlidingExpiration = TimeSpan.FromMinutes(15);
-        _outputCacheStore = outputCacheStore;
     }
 
     #region IMemoryCache
@@ -28,7 +23,7 @@ public class CacheHelper : ICacheHelper
     public void Set<T>(string key, T value)
     {
         var cacheOptions = new MemoryCacheEntryOptions()
-            .SetSlidingExpiration(_defaultSlidingExpiration);
+            .SetSlidingExpiration(CacheConstants.DefaultCacheDuration);
             
         _cache.Set(key, value, cacheOptions);
         _cacheKeys.Add(key);
@@ -52,20 +47,19 @@ public class CacheHelper : ICacheHelper
         
         _cacheKeys.Clear();
     }
-    #endregion
-
-
-    #region IOutputCache
-    public async Task EvictByTagAsync(string tag, CancellationToken cancellationToken = default)
-    {
-        await _outputCacheStore.EvictByTagAsync(tag, cancellationToken);
-        
-        InvalidateCache();
-    }
     
-    public async Task InvalidateOutputCache(CancellationToken cancellationToken = default)
+    public void InvalidateCacheKey(string key)
     {
-        await EvictByTagAsync(CacheConstants.PoliciesTag, cancellationToken);
+        if (!string.IsNullOrEmpty(key))
+        {
+            _cache.Remove(key);
+            var newBag = new ConcurrentBag<string>(_cacheKeys.Where(k => k != key));
+            _cacheKeys.Clear();
+            foreach (var k in newBag)
+            {
+                _cacheKeys.Add(k);
+            }
+        }
     }
     #endregion
 } 

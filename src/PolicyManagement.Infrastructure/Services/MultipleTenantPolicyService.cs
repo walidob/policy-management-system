@@ -27,13 +27,14 @@ public class MultipleTenantPolicyService : IMultipleTenantPolicyService
         try
         {
             var policiesWithTenantInfo = await _repository.GetPoliciesAcrossTenantsAsync(pageNumber, pageSize, sortColumn, sortDirection, cancellationToken);
-
+            var totalCount = await _repository.GetPoliciesAcrossTenantsCountAsync(sortColumn, sortDirection, cancellationToken);
+            
             var policyDtos = policiesWithTenantInfo.Select(item => _mapper.Map<PolicyDto>(item)).ToList();
 
             return new PolicyResponseDto
             {
                 Policies = policyDtos,
-                TotalCount = policiesWithTenantInfo.Count,
+                TotalCount = totalCount,
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };

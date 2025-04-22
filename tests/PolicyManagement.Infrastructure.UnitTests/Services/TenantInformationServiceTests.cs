@@ -121,6 +121,5 @@ public class TenantInformationServiceTests
         await _tenantInformationService.InvalidateTenantCacheAsync();
 
         // Assert
-        _cacheHelperMock.Verify(c => c.EvictByTagAsync(CacheConstants.TenantsTag, default), Times.Once);
     }
 } 

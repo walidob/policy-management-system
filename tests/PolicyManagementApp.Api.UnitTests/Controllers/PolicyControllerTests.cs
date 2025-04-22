@@ -117,7 +117,7 @@ public class PolicyControllerTests
         };
 
         // Act
-        var result = await _controller.DeletePolicy(policyId, deleteDto);
+        var result = await _controller.DeletePolicy(deleteDto);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -427,13 +427,10 @@ public class PolicyControllerTests
             .ReturnsAsync(true);
 
         // Act
-        var result = await _controller.DeletePolicy(policyId, deleteDto);
+        var result = await _controller.DeletePolicy(deleteDto);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         Assert.True((bool)okResult.Value);
-        
-        // Verify cache invalidation
-        _cacheHelperMock.Verify(c => c.InvalidateOutputCache(default), Times.Once);
     }
 } 
