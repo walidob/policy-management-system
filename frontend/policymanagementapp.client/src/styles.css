@@ -71,7 +71,6 @@ button {
   border-color: #9e1e29;
 }
 
-/* Button outline styles */
 .btn-outline-primary {
   color: var(--secondary-color);
   background-color: transparent;
@@ -86,7 +85,6 @@ button {
   color: white;
 }
 
-/* Small button variant */
 .btn-sm {
   padding: 0.25rem 0.75rem;
   font-size: 0.875rem;
@@ -107,7 +105,6 @@ button {
   border-color: white;
 }
 
-/* Header styles */
 .navbar .container-fluid {
   display: flex;
   justify-content: space-between;
@@ -128,7 +125,6 @@ button {
   border: 1px solid var(--primary-color);
 }
 
-/* Additional overrides for other Bootstrap components that use theme colors */
 .text-primary {
   color: var(--primary-color) !important;
 }
@@ -145,12 +141,7 @@ button {
   background-color: var(--secondary-color) !important;
 }
 
-.invalid-feedback {
-  display: block;
-  color: var(--secondary-color);
-}
 
-/* Login specific styles */
 .login-container {
   display: flex;
   height: 100vh;
@@ -184,7 +175,6 @@ button {
   color: var(--secondary-color);
 }
 
-/* Table styles */
 .table {
   width: 100%;
   margin-bottom: 1rem;
@@ -220,7 +210,6 @@ button {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Card styles */
 .card {
   position: relative;
   display: flex;
@@ -247,7 +236,6 @@ button {
   padding: 1.25rem;
 }
 
-/* Badge styles */
 .badge {
   display: inline-block;
   padding: 0.25em 0.4em;
