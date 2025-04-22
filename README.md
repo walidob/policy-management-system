@@ -109,7 +109,7 @@ dotnet ef database update -c DefaultDbContext -p src/PolicyManagement.Infrastruc
 The Angular application is configured with a proxy to automatically forward API requests to the backend. (DEV ONLY)
 
 ### Running the Application
-To run the application, update your launchSettings.json with the following configuration and click Start:
+To run the application, update your launchSettings.json with the following configuration, set the API project as the startup project and click Start:
 
 ```json
 {
