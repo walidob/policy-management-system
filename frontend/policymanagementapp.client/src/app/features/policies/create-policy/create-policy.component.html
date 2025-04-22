@@ -82,6 +82,7 @@
                   <input type="date" id="effectiveDate" class="form-control" formControlName="effectiveDate">
                   <div *ngIf="submitted && policyForm.get('effectiveDate')?.errors" class="text-danger mt-1">
                     <small *ngIf="policyForm.get('effectiveDate')?.errors?.['required']">Effective date is required</small>
+                    <small *ngIf="policyForm.get('effectiveDate')?.errors?.['effectiveBeforeToday']">Effective date cannot be in the past</small>
                   </div>
                 </div>
                 
@@ -90,6 +91,7 @@
                   <input type="date" id="expiryDate" class="form-control" formControlName="expiryDate">
                   <div *ngIf="submitted && policyForm.get('expiryDate')?.errors" class="text-danger mt-1">
                     <small *ngIf="policyForm.get('expiryDate')?.errors?.['required']">Expiry date is required</small>
+                    <small *ngIf="policyForm.get('expiryDate')?.errors?.['expiryBeforeEffective']">Expiry date must be after effective date</small>
                   </div>
                 </div>
                 
