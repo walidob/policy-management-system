@@ -17,7 +17,7 @@ The system uses a multi-tenant database approach:
 
 ### User Roles
 - Super Admin: Has access to all tenants (Except creating/updating policies - not yet implemented)
-- Tenant Admin: Can create, edit and view policies from his tenant's database
+- Tenant Admin: Can create, edit, delete and view policies from his tenant's database
 - Client: Can only read policies
 
 ### Application Flow
@@ -30,20 +30,6 @@ The system uses a multi-tenant database approach:
 - When a user signs in, the system authenticates credentials against the default database
 - The system identifies the user's role (Super Admin, Tenant Admin, or Client)
 - Role-based UI elements are dynamically shown or hidden based on the user's permissions
-
-## Login Credentials
-
-### Super Admin
-- Email: superadmin@tenants.com
-- Password: P@ssw0rd
-
-### Tenant Admins
-- Email: admin@tenant2.com (for Tenant 2)
-- Password: P@ssw0rd
-
-### Tenant Users
-- Email: user@tenant1.com (for Tenant 1)
-- Password: P@ssw0rd
 
 ## Frontend Structure
 The application consists of 5 main pages/components:
@@ -78,14 +64,14 @@ cd policy-management-system
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Data Source=YOUR_SERVER;Initial Catalog=DefaultDb;Persist Security Info=True;User ID=sa;Password=your_password;Trust Server Certificate=True"
+    "DefaultConnection": "Data Source=[SERVERNAME];Initial Catalog=DefaultDb;Persist Security Info=True;User ID=[USERNAME];Password=[PASSWORD];Trust Server Certificate=True"
   },
   "TenantConfiguration": {
     "Tenants": [
       {
         "Name": "Tenant 1",
         "Identifier": "tenant-1",
-        "ConnectionString": "Data Source=YOUR_SERVER;Initial Catalog=Tenant-1Db;Persist Security Info=True;User ID=sa;Password=your_password;Trust Server Certificate=True",
+        "ConnectionString": "Data Source=[SERVERNAME];Initial Catalog=Tenant-1Db;Persist Security Info=True;User ID=[USERNAME];Password=[PASSWORD];Trust Server Certificate=True",
         "DatabaseIdentifier": "Tenant-1Db"
       }
     ]
@@ -202,6 +188,20 @@ const PROXY_CONFIG = [
 module.exports = PROXY_CONFIG;
 
 ```
+## Login Credentials
+
+### Super Admin
+- Email: superadmin@tenants.com
+- Password: P@ssw0rd
+
+### Tenant Admins
+- Email: admin@tenant2.com (for Tenant 2)
+- Password: P@ssw0rd
+
+### Tenant Users
+- Email: user@tenant1.com (for Tenant 1)
+- Password: P@ssw0rd
+
 ## Testing
 
 The solution includes comprehensive unit tests covering almost all aspects of the API project.

@@ -22,9 +22,13 @@ A multi-tenant policy management system built with Angular 19+ and .NET 9.
 
 ## Key Features
 
-- **Multi-Tenant Architecture** with Finbuckle.MultiTenant
+- **Multi-Tenant Architecture** with [Finbuckle.MultiTenant](https://www.finbuckle.com/MultiTenant/Docs/v9.1.3/Introduction)
   - Tenant-specific databases with claim-based resolution
   - Automatic migrations across tenant databases
+  - Per-tenant behavior configuration
+  - Complete data isolation between tenants
+  - Custom tenant resolution strategies
+  - Middleware integration for HTTP request processing
 
 - **RESTful API** with proper HTTP methods and status codes
   - Response caching with tiered expiration (5-15 minutes) (Currently set for MetadataController)
