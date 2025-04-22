@@ -38,12 +38,21 @@ export class CreatePolicyComponent implements OnInit {
         this.tenantId = user.tenantId;
       }
     });
+    
+    this.policyForm.get('effectiveDate')?.valueChanges.subscribe(() => {
+      this.policyForm.get('expiryDate')?.updateValueAndValidity();
+    });
+    
+    this.policyForm.get('creationDate')?.valueChanges.subscribe(() => {
+      this.policyForm.get('effectiveDate')?.updateValueAndValidity();
+    });
   }
   
   createForm(): FormGroup {
     return this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(256)]],
       description: ['', [Validators.maxLength(1000)]],
+      creationDate: [new Date().toISOString().split('T')[0], [Validators.required]],
       effectiveDate: [new Date().toISOString().split('T')[0], [Validators.required, this.effectiveDateValidator]],
       expiryDate: [this.getDefaultExpiryDate(), [Validators.required, this.expiryDateValidator]],
       isActive: [true],
@@ -68,6 +77,17 @@ export class CreatePolicyComponent implements OnInit {
     const parent = control.parent;
     
     if (!parent) return null;
+    
+    const creationDateControl = parent.get('creationDate');
+    
+    if (creationDateControl && creationDateControl.value) {
+      const creationDate = new Date(creationDateControl.value);
+      creationDate.setHours(0, 0, 0, 0);
+      
+      if (effectiveDate < creationDate) {
+        return { effectiveBeforeCreation: true };
+      }
+    }
     
     return null;
   }

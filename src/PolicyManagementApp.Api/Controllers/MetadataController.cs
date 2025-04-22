@@ -4,6 +4,8 @@ using System.Reflection;
 using Microsoft.Net.Http.Headers;
 using PolicyManagement.Application.Common.Enums;
 using Microsoft.AspNetCore.OutputCaching;
+using PolicyManagement.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace PolicyManagementApp.Api.Controllers;
 
@@ -13,6 +15,12 @@ namespace PolicyManagementApp.Api.Controllers;
 public class MetadataController : ControllerBase //For lookups - We are using enums as single source of truth. 
 {
     private const int CacheDurationInSeconds = 3600;
+    private readonly ITenantInformationService _tenantInformationService;
+
+    public MetadataController(ITenantInformationService tenantInformationService = null)
+    {
+        _tenantInformationService = tenantInformationService;
+    }
 
     [HttpGet("enums/{enumType}")]
     [OutputCache(Duration = CacheDurationInSeconds, VaryByQueryKeys = new[] { "enumType" })]
@@ -74,6 +82,39 @@ public class MetadataController : ControllerBase //For lookups - We are using en
         Response.Headers[HeaderNames.Vary] = HeaderNames.Accept;
 
         return Ok(enums);
+    }
+
+    [HttpGet("tenants")]
+    [Authorize(Roles = $"{nameof(Role.TenantsSuperAdmin)}")]
+    [OutputCache(Duration = CacheDurationInSeconds)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetAllTenants()
+    {
+        try
+        {
+            if (_tenantInformationService == null)
+            {
+                return StatusCode(500, "Tenant service not available");
+            }
+
+            var tenants = await _tenantInformationService.GetAllTenantsAsync();
+            var tenantData = tenants.Select(t => new
+            {
+                id = t.Id,
+                name = t.Name,
+                identifier = t.Identifier
+            }).ToList();
+
+            Response.Headers[HeaderNames.CacheControl] = $"public, max-age={CacheDurationInSeconds}";
+            Response.Headers[HeaderNames.Vary] = HeaderNames.Accept;
+
+            return Ok(tenantData);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
     }
 
     private static List<object> GetEnumData(Type enumType)

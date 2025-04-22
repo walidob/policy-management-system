@@ -83,6 +83,7 @@
                   <div *ngIf="submitted && policyForm.get('effectiveDate')?.errors" class="text-danger mt-1">
                     <small *ngIf="policyForm.get('effectiveDate')?.errors?.['required']">Effective date is required</small>
                     <small *ngIf="policyForm.get('effectiveDate')?.errors?.['effectiveBeforeToday']">Effective date cannot be in the past</small>
+                    <small *ngIf="policyForm.get('effectiveDate')?.errors?.['effectiveBeforeCreation']">Effective date must be after or equal to creation date</small>
                   </div>
                 </div>
                 

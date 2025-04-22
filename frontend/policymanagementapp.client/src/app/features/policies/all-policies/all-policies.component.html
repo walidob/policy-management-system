@@ -23,8 +23,11 @@
               <th class="sortable" (click)="sortBy('name')">
                 Name <i [class]="getSortIcon('name')"></i>
               </th>
-              <th class="sortable" (click)="sortBy('policyTypeName')">
-                Type <i [class]="getSortIcon('policyTypeName')"></i>
+              <th>
+                Type
+              </th>
+              <th *ngIf="isSuperAdmin">
+                Tenant
               </th>
               <th class="sortable" (click)="sortBy('effectiveDate')">
                 Effective Date <i [class]="getSortIcon('effectiveDate')"></i>
@@ -43,6 +46,7 @@
               <td>{{ policy.id }}</td>
               <td>{{ policy.name }}</td>
               <td>{{ policy.policyTypeName }}</td>
+              <td *ngIf="isSuperAdmin">{{ policy.tenantName || policy.tenantId || 'N/A' }}</td>
               <td>{{ policy.effectiveDate | date:'mediumDate' }}</td>
               <td>{{ policy.expiryDate | date:'mediumDate' }}</td>
               <td>

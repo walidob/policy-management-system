@@ -95,6 +95,33 @@ export class AllPoliciesComponent implements OnInit, OnDestroy {
             })
           );
         }),
+        switchMap(response => {
+          if (this.isSuperAdmin) {
+            return this.metadataService.getTenants().pipe(
+              map(tenants => {
+                response.policies = response.policies.map(policy => {
+                  if (policy.tenantId) {
+                    const tenant = tenants.find(t => t.id === policy.tenantId);
+                    if (tenant) {
+                      return {
+                        ...policy,
+                        tenantName: tenant.name
+                      };
+                    }
+                  }
+                  return policy;
+                });
+                return response;
+              }),
+              catchError(error => {
+                console.error('Error loading tenant data:', error);
+                return of(response);
+              })
+            );
+          } else {
+            return of(response);
+          }
+        }),
         catchError(error => {
           console.error('Error loading policies:', error);
           this.error = true;
@@ -236,6 +263,9 @@ export class AllPoliciesComponent implements OnInit, OnDestroy {
   }
 
   sortBy(column: string): void {
+    if (column === 'policyTypeName' || column === 'tenantName') {
+      return;
+    }
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {

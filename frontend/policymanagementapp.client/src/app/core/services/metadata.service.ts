@@ -9,6 +9,12 @@ export interface EnumValue {
   displayName: string;
 }
 
+export interface Tenant {
+  id: string;
+  name: string;
+  identifier: string;
+}
+
 export interface AllEnums {
   policyTypes: EnumValue[];
   claimStatuses: EnumValue[];
@@ -23,6 +29,7 @@ export class MetadataService {
   private cachedPolicyTypes: EnumValue[] | null = null;
   private cachedClaimStatuses: EnumValue[] | null = null;
   private cachedRoles: EnumValue[] | null = null;
+  private cachedTenants: Tenant[] | null = null;
 
   constructor(private apiService: ApiService) { }
 
@@ -103,6 +110,45 @@ export class MetadataService {
       catchError(error => {
         return of([]);
       })
+    );
+  }
+
+  /**
+   * Get all tenants (cached)
+   */
+  getTenants(): Observable<Tenant[]> {
+    if (this.cachedTenants) {
+      return of(this.cachedTenants);
+    }
+
+    return this.apiService.get<Tenant[]>('metadata/tenants').pipe(
+      tap(tenants => this.cachedTenants = tenants),
+      catchError(error => {
+        console.error('Error fetching tenants:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get tenant by ID
+   */
+  getTenantById(tenantId: string): Observable<Tenant | null> {
+    return this.getTenants().pipe(
+      map(tenants => tenants.find(t => t.id === tenantId) || null)
+    );
+  }
+
+  /**
+   * Get tenant name by ID
+   */
+  getTenantName(tenantId: string): Observable<string> {
+    if (!tenantId) {
+      return of('');
+    }
+    
+    return this.getTenantById(tenantId).pipe(
+      map(tenant => tenant?.name || tenantId)
     );
   }
 
