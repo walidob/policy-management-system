@@ -2,9 +2,11 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Moq;
 using PolicyManagement.Application.Contracts.Identity;
 using PolicyManagement.Domain.Entities.DefaultDb.Identity;
+using PolicyManagement.Infrastructure.Cache;
 using PolicyManagementApp.Api.Controllers;
 using System.Security.Claims;
 
@@ -13,12 +15,14 @@ namespace PolicyManagementApp.Api.UnitTests.Controllers;
 public class AuthControllerTests
 {
     private readonly Mock<IAuthService> _authServiceMock;
+    private readonly Mock<ICacheHelper> _cacheHelperMock;
     private readonly AuthController _controller;
-
+    
     public AuthControllerTests()
     {
         _authServiceMock = new Mock<IAuthService>();
-        _controller = new AuthController(_authServiceMock.Object);
+        _cacheHelperMock = new Mock<ICacheHelper>();
+        _controller = new AuthController(_authServiceMock.Object, _cacheHelperMock.Object);
         
         // Set up HttpContext for controller
         _controller.ControllerContext = new ControllerContext

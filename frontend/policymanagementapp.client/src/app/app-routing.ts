@@ -17,8 +17,8 @@ export const routes: Routes = [
       { path: 'login', component: LoginComponent },
       { path: 'policies', component: AllPoliciesComponent },
       { path: 'policies/create', component: CreatePolicyComponent },
+      { path: 'policies/:id', component: PolicyDetailComponent },
       { path: 'policies/edit/:id', component: EditPolicyComponent },
-      { path: 'policies/:id', component: PolicyDetailComponent }
     ]
   },
   { path: '**', redirectTo: 'login' }

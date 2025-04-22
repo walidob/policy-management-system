@@ -7,6 +7,7 @@ namespace PolicyManagementApp.Api.Extensions
     {
         public static IServiceCollection AddApiRateLimiting(this IServiceCollection services)
         {
+            //EXAMPLE OF THIS IN OUR API:Failed to load policies: Http failure response for https://127.0.0.1:52619/api/policies?pageNumber=1&pageSize=10&sortColumn=id&sortDirection=asc: 429 Too Many Requests
             services.AddRateLimiter(options =>
             {
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
@@ -15,7 +16,7 @@ namespace PolicyManagementApp.Api.Extensions
                         factory: partition => new FixedWindowRateLimiterOptions
                         {
                             AutoReplenishment = true,
-                            PermitLimit = 100,
+                            PermitLimit = 50,
                             QueueLimit = 0,
                             Window = TimeSpan.FromMinutes(1)
                         }));
@@ -43,30 +44,5 @@ namespace PolicyManagementApp.Api.Extensions
 
             return services;
         }
-
-        public static IServiceCollection AddApiOutputCache(this IServiceCollection services)
-        {
-            services.AddOutputCache(options =>
-            {
-                options.DefaultExpirationTimeSpan = TimeSpan.FromMinutes(5);
-                options.AddBasePolicy(builder => builder.Tag("api-all"));
-
-                options.AddPolicy("Policies", builder =>
-                    builder.Tag("policies")
-                          .Expire(TimeSpan.FromMinutes(10)));
-
-                options.AddPolicy("Tenants", builder =>
-                    builder.Tag("tenants")
-                          .Expire(TimeSpan.FromMinutes(15)));
-
-                options.AddPolicy("Clients", builder =>
-                    builder.Tag("clients")
-                          .Expire(TimeSpan.FromMinutes(10)));
-            });
-
-            return services;
-        }
-
-
     }
 }

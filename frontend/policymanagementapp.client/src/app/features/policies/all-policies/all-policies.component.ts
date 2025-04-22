@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { Policy } from '../../../shared/models/interfaces/policy.models';
 import { PolicyService } from '../../../core/services/policy.service';
-import { catchError, finalize, of, Subject, takeUntil, switchMap } from 'rxjs';
+import { catchError, finalize, of, Subject, takeUntil, switchMap, map } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { MetadataService } from '../../../core/services/metadata.service';
 
 @Component({
   selector: 'app-all-policies',
@@ -34,7 +35,8 @@ export class AllPoliciesComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private policyService: PolicyService,
-    private authService: AuthService
+    private authService: AuthService,
+    private metadataService: MetadataService
   ) {}
 
   ngOnInit(): void {
@@ -74,6 +76,25 @@ export class AllPoliciesComponent implements OnInit, OnDestroy {
     this.policyService.getAllPolicies(this.page, this.pageSize, this.sortColumn, this.sortDirection)
       .pipe(
         takeUntil(this.destroy$),
+        switchMap(response => {
+          return this.metadataService.getPolicyTypes().pipe(
+            map(policyTypes => {
+              response.policies = response.policies.map(policy => {
+                if (policy.policyTypeId !== undefined) {
+                  const policyType = policyTypes.find(t => t.id === policy.policyTypeId);
+                  if (policyType) {
+                    return {
+                      ...policy,
+                      policyTypeName: policyType.displayName
+                    };
+                  }
+                }
+                return policy;
+              });
+              return response;
+            })
+          );
+        }),
         catchError(error => {
           console.error('Error loading policies:', error);
           this.error = true;
@@ -129,8 +150,9 @@ export class AllPoliciesComponent implements OnInit, OnDestroy {
     }
   }
 
-  viewPolicy(id: number): void {
-    this.router.navigate(['/policies', id]);
+  viewPolicy(id: number, tenantId?: string): void {
+    const queryParams = tenantId ? { tenantId } : undefined;
+    this.router.navigate(['/policies', id], { queryParams });
   }
 
   editPolicy(id: number, tenantId?: string): void {
@@ -220,6 +242,7 @@ export class AllPoliciesComponent implements OnInit, OnDestroy {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
+    this.page = 1;
     this.loadPolicies();
   }
 
@@ -227,6 +250,6 @@ export class AllPoliciesComponent implements OnInit, OnDestroy {
     if (this.sortColumn !== column) {
       return 'bi bi-arrow-down-up';
     }
-    return this.sortDirection === 'asc' ? 'bi bi-sort-down-alt' : 'bi bi-sort-down';
+    return this.sortDirection === 'asc' ? 'bi bi-sort-down' : 'bi bi-sort-up';
   }
 } 
