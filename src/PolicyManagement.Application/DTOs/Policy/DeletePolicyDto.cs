@@ -2,13 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace PolicyManagement.Application.DTOs.Policy;
 
-public class DeletePolicyDto
+public class DeletePolicyDto : PolicyDtoBase
 {
     [Required]
     public int Id { get; set; }
-    
-    [Required]
-    public string TenantId { get; set; }
     
     // used for building cache keys
     public int PageNumber { get; set; } = 1;

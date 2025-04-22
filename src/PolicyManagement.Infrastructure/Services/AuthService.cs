@@ -52,7 +52,8 @@ public class AuthService : IAuthService
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 JwtToken = jwtToken,
-                TokenExpires = DateTime.UtcNow.AddMinutes(60)
+                TokenExpires = DateTime.UtcNow.AddMinutes(60),
+                Roles = roles.ToList()
             };
         }
         catch (Exception ex) when (!(ex is InvalidOperationException))

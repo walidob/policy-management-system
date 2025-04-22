@@ -1,32 +1,13 @@
-import { HttpClient } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
-import { PolicyDto } from './models/policy-dto';
+import { Component } from '@angular/core';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  standalone: false,
+  standalone: true,
+  imports: [RouterModule],
   styleUrl: './app.component.css'
 })
-export class AppComponent implements OnInit {
-  public policies: PolicyDto[] = [];
-
-  constructor(private http: HttpClient) {}
-
-  ngOnInit() {
-    this.getPolicies();
-  }
-
-  getPolicies() {
-    this.http.get<PolicyDto[]>('api/policy').subscribe(
-      (result) => {
-        this.policies = result;
-      },
-      (error) => {
-        console.error(error);
-      }
-    );
-  }
-
-  title = 'policymanagementapp.client';
+export class AppComponent {
+  title = 'Policy Management System';
 }

@@ -81,6 +81,9 @@ public class MultipleTenantPolicyRepository : IMultipleTenantPolicyRepository
                 .ToList();
 
             _cacheHelper.Set(cacheKey, paginatedPolicies, CacheConstants.PolicyCacheDuration);
+            
+            string totalCountCacheKey = CacheConstants.GetAllPoliciesCacheKey(0, 0, sortColumn, sortDirection) + "_TotalCount";
+            _cacheHelper.Set(totalCountCacheKey, allPolicies.Count, CacheConstants.PolicyCacheDuration);
 
             return paginatedPolicies;
         }
@@ -88,6 +91,46 @@ public class MultipleTenantPolicyRepository : IMultipleTenantPolicyRepository
         {
             _logger.LogError(ex, "Error getting policies across tenants");
             throw;
+        }
+    }
+
+    public async Task<int> GetPoliciesAcrossTenantsCountAsync(string sortColumn = "id", string sortDirection = "asc", CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            string totalCountCacheKey = CacheConstants.GetAllPoliciesCacheKey(0, 0, sortColumn, sortDirection) + "_TotalCount";
+            
+            if (_cacheHelper.TryGetValue(totalCountCacheKey, out int cachedCount))
+            {
+                return cachedCount;
+            }
+            
+            var tenants = await _tenantService.GetAllTenantsAsync(cancellationToken);
+            
+            if (tenants.Count == 0)
+            {
+                return 0;
+            }
+            
+            int totalCount = 0;
+            
+            var tasks = tenants.Select(async tenant =>
+            {
+                var tenantPolicies = await GetPoliciesFromTenantAsync(tenant, sortColumn, sortDirection, cancellationToken);
+                return tenantPolicies.Count;
+            });
+            
+            var results = await Task.WhenAll(tasks);
+            totalCount = results.Sum();
+            
+            _cacheHelper.Set(totalCountCacheKey, totalCount, CacheConstants.PolicyCacheDuration);
+            
+            return totalCount;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting policies count across tenants");
+            return 0;
         }
     }
 
@@ -198,7 +241,7 @@ public class MultipleTenantPolicyRepository : IMultipleTenantPolicyRepository
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
                 
-                await _cacheHelper.EvictByTagAsync(CacheConstants.PoliciesTag, cancellationToken);
+                _cacheHelper.InvalidateCache();
                 
                 return (policy, tenant.Id, tenant.Name);
             }
@@ -244,7 +287,7 @@ public class MultipleTenantPolicyRepository : IMultipleTenantPolicyRepository
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
                 
-                await _cacheHelper.EvictByTagAsync(CacheConstants.PoliciesTag, cancellationToken);
+                _cacheHelper.InvalidateCache();
                 
                 return (existingPolicy, tenant.Id, tenant.Name);
             }
@@ -282,14 +325,19 @@ public class MultipleTenantPolicyRepository : IMultipleTenantPolicyRepository
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
                 
-                await _cacheHelper.EvictByTagAsync(CacheConstants.PoliciesTag, cancellationToken);
+                string policyByIdCacheKey = CacheConstants.GetPolicyByIdCacheKey(deleteDto.Id, deleteDto.TenantId);
+                _cacheHelper.InvalidateCacheKey(policyByIdCacheKey);
+                
+                _cacheHelper.InvalidateCacheKey(CacheConstants.GetAllPoliciesCacheKey(deleteDto));
+                
+                _cacheHelper.InvalidateCacheKey(CacheConstants.GetPoliciesByTenantCacheKey(deleteDto));
                 
                 return true;
             }
             catch
             {
                 await unitOfWork.RollbackTransactionAsync(cancellationToken);
-                throw;
+                return false;
             }
         }
         catch (Exception ex)

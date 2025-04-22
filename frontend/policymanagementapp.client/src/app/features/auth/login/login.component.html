@@ -1,0 +1,62 @@
+<div class="login-container">
+  <div class="background-section d-none d-lg-block" style="background-image: url('/assets/images/chedid-background.png');">
+  </div>
+  
+  <div class="login-section">
+    <div class="container-fluid">
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-12">
+          <div class="logo-container">
+            <img src="/assets/images/chedid-logo.png" alt="Chedid Re Logo" class="img-fluid">
+          </div>
+
+          <div class="login-form">
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+              <div class="form-group">
+                <label for="Email">Email</label>
+                <input 
+                  type="email" 
+                  class="form-control" 
+                  id="Email" 
+                  formControlName="Email" 
+                  placeholder="Enter your email"
+                  autocomplete="email">
+                <div *ngIf="loginForm.get('Email')?.invalid && loginForm.get('Email')?.touched" class="error-message">
+                  <small *ngIf="loginForm.get('Email')?.errors?.['required']">Email is required</small>
+                  <small *ngIf="loginForm.get('Email')?.errors?.['email']">Please enter a valid email</small>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="Password">Password</label>
+                <input 
+                  type="password" 
+                  class="form-control" 
+                  id="Password" 
+                  formControlName="Password" 
+                  placeholder="Enter your password"
+                  autocomplete="new-password">
+                <div *ngIf="loginForm.get('Password')?.invalid && loginForm.get('Password')?.touched" class="error-message">
+                  <small *ngIf="loginForm.get('Password')?.errors?.['required']">Password is required</small>
+                </div>
+              </div>
+              
+              <div class="form-group text-center">
+                <button 
+                  type="submit" 
+                  [disabled]="isLoading"
+                  class="btn btn-primary">
+                  Sign In
+                </button>
+              </div>
+              
+              <div *ngIf="errorMessage" class="error-message text-center mt-3">
+                {{ errorMessage }}
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

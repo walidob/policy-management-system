@@ -41,7 +41,7 @@ public class PolicyService : IPolicyService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            await _cacheHelper.EvictByTagAsync(CacheConstants.PoliciesTag, cancellationToken);
+            _cacheHelper.InvalidateCache();
       
             return _mapper.Map<PolicyDto>(policy);
         }
@@ -78,7 +78,7 @@ public class PolicyService : IPolicyService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
             
-            await _cacheHelper.EvictByTagAsync(CacheConstants.PoliciesTag, cancellationToken);
+            _cacheHelper.InvalidateCache();
 
             return _mapper.Map<PolicyDto>(policy);
         }
@@ -108,7 +108,7 @@ public class PolicyService : IPolicyService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
             
-            await _cacheHelper.EvictByTagAsync(CacheConstants.PoliciesTag, cancellationToken);
+            _cacheHelper.InvalidateCache();
 
             return _mapper.Map<PolicyDto>(policy);
         }

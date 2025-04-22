@@ -27,6 +27,8 @@ public class JwtTokenService : IJwtTokenService
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Azp, _jwtSettings.Audience),
             new(ClaimTypes.Name, user.UserName),
+            new(ClaimTypes.GivenName, user.FirstName),
+            new(ClaimTypes.Surname, user.LastName),
             new("uid", user.Id.ToString()),
             new("apptenid", user.TenantId?.ToString() ?? string.Empty)
         };

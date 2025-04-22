@@ -37,10 +37,10 @@
                 "input": "public"
               }
             ],
-           "styles": [
-  "node_modules/bootstrap-css-only/css/bootstrap.min.css",
-  "src/styles.css"
-],
+            "styles": [
+              "node_modules/bootstrap-css-only/css/bootstrap.min.css",
+              "src/styles.css"
+            ],
             "scripts": []
           },
           "configurations": {
